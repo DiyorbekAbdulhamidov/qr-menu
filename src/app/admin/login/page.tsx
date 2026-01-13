@@ -104,7 +104,7 @@ export default function LoginPage() {
 
         {/* Test uchun eslatma */}
         <p className="text-center text-xs text-neutral-400 mt-4">
-          Agar akkauntingiz bo'lmasa, ma'lumotlar bazasida qo'lda yaratishingiz kerak.
+          {/* Agar akkauntingiz bo'lmasa, ma'lumotlar bazasida qo'lda yaratishingiz kerak. */}
         </p>
       </div>
     </div>
