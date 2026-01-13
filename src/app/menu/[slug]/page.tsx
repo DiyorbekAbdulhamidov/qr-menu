@@ -153,9 +153,9 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
                   <span className="font-bold text-lg text-neutral-900">{Number(item.price).toLocaleString()} <span className="text-xs font-normal">so'm</span></span>
                 </div>
 
-                <button className="bg-black text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-800 transition-colors shadow-lg shadow-neutral-200">
+                {/* <button className="bg-black text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-800 transition-colors shadow-lg shadow-neutral-200">
                   <span className="text-lg font-light leading-none pb-0.5">+</span>
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
