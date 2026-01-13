@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SaaS QR Menu | Webleaders",
+  title: "SaaS QR Menu",
   description: "Restoranlar uchun zamonaviy QR menyu tizimi",
 };
 
