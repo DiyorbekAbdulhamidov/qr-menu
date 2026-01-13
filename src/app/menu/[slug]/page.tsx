@@ -7,7 +7,6 @@ import { MenuItem, Restaurant } from "@/lib/types";
 import { formatCurrency, cn } from "@/lib/utils";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { motion, AnimatePresence } from "framer-motion";
 import { Search, MapPin, Clock, Star, UtensilsCrossed, Image as ImageIcon } from "lucide-react";
 
 export default function PublicMenuPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -16,25 +15,30 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState("Barchasi"); // "All" o'rniga "Barchasi"
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const itemsRef = collection(db, "restaurants", slug, "menuItems");
-        const itemsSnapshot = await getDocs(query(itemsRef, orderBy("createdAt", "desc")));
+        console.log("Fetching menu for:", slug); // 1. Tekshirish uchun log
 
-        // Bu yerda kelajakda restoran infosini DB dan olishingiz mumkin
-        // Hozircha statik ma'lumotlar bilan to'ldiramiz
+        const itemsRef = collection(db, "restaurants", slug, "menuItems");
+        // orderBy ni vaqtincha olib tashladik (ba'zan indeks bo'lmasa xato beradi)
+        const itemsSnapshot = await getDocs(query(itemsRef));
+
+        const items = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItem));
+        console.log("Topilgan taomlar soni:", items.length); // 2. Taomlar sonini tekshiramiz
+
+        // Taomlarni sanasiga qarab saralash (Javascriptda qilyapmiz, xatosiz ishlashi uchun)
+        items.sort((a, b) => b.createdAt - a.createdAt);
+
         setRestaurant({
           id: slug,
           name: slug.toUpperCase(),
           ownerId: "",
-          // Logotip bo'lmasa shu rang chiqadi
           themeColor: "bg-orange-500"
         });
 
-        const items = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItem));
         setMenuItems(items);
       } catch (error) {
         console.error("Error fetching menu:", error);
@@ -46,17 +50,21 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
     fetchData();
   }, [slug]);
 
-  const categories = ["All", ...Array.from(new Set(menuItems.map((item) => item.category)))];
+  // Kategoriyalarni yig'ish
+  const categories = ["Barchasi", ...Array.from(new Set(menuItems.map((item) => item.category)))];
 
-  const filteredItems = activeCategory === "All"
+  // Filtrlash
+  const filteredItems = activeCategory === "Barchasi"
     ? menuItems
     : menuItems.filter(item => item.category === activeCategory);
 
   if (loading) return <MenuSkeleton />;
+
+  // Agar restoran topilmasa (lekin slug bor bo'lsa, shunchaki menyu bo'sh deb ko'rsatamiz)
   if (!restaurant) return (
     <div className="min-h-screen flex flex-col items-center justify-center text-neutral-400">
       <UtensilsCrossed size={48} className="mb-4 opacity-20" />
-      <p>Restoran topilmadi</p>
+      <p>Restoran ma'lumotlari yuklanmadi</p>
     </div>
   );
 
@@ -65,18 +73,15 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
 
       {/* 1. Hero / Header Section */}
       <div className="relative h-48 bg-neutral-900 overflow-hidden">
-        {/* Orqa fon rasmi (yoki gradient) */}
         <div className="absolute inset-0 bg-gradient-to-r from-neutral-900 to-neutral-800 opacity-90 z-0" />
-        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
 
         <div className="relative z-10 flex flex-col justify-end h-full px-5 pb-6 text-white">
           <h1 className="text-3xl font-bold tracking-tight mb-1">{restaurant.name}</h1>
           <div className="flex items-center gap-3 text-sm text-neutral-300">
             <span className="flex items-center gap-1"><Star size={14} className="text-yellow-400 fill-yellow-400" /> 4.8</span>
             <span>•</span>
-            <span className="flex items-center gap-1"><Clock size={14} /> 15-20 min</span>
-            <span>•</span>
-            <span className="flex items-center gap-1">$$$</span>
+            <span className="bg-white/10 px-2 py-0.5 rounded text-xs">Ochiq</span>
           </div>
         </div>
       </div>
@@ -103,64 +108,60 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
 
       {/* 3. Menu Grid */}
       <main className="max-w-md mx-auto px-4 pt-6 space-y-4">
-        <AnimatePresence mode="popLayout">
-          {filteredItems.map((item) => (
-            <motion.div
-              layout
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              key={item.id}
-              className={cn(
-                "group bg-white rounded-2xl p-3 shadow-sm border border-neutral-100 flex gap-4 overflow-hidden relative active:scale-[0.98] transition-transform",
-                !item.isAvailable && "opacity-60 grayscale pointer-events-none"
+        {menuItems.length === 0 && !loading && (
+          <div className="p-4 bg-yellow-50 text-yellow-800 rounded-lg text-sm text-center">
+            Bazadan taomlar topilmadi. Admin paneldan qo'shganingizga ishonch hosil qiling.
+          </div>
+        )}
+
+        {filteredItems.map((item) => (
+          <div
+            key={item.id}
+            className={cn(
+              "group bg-white rounded-2xl p-3 shadow-sm border border-neutral-100 flex gap-4 overflow-hidden relative active:scale-[0.98] transition-transform",
+              !item.isAvailable && "opacity-60 grayscale pointer-events-none"
+            )}
+          >
+            <div className="relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-100">
+              {item.imageUrl ? (
+                <Image
+                  src={item.imageUrl}
+                  alt={item.name}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-neutral-300 bg-neutral-50">
+                  <ImageIcon size={24} />
+                </div>
               )}
-            >
-              {/* Image Section */}
-              <div className="relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-neutral-100">
-                {item.imageUrl ? (
-                  <Image
-                    src={item.imageUrl}
-                    alt={item.name}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-neutral-300 bg-neutral-50">
-                    <ImageIcon size={24} />
-                  </div>
-                )}
+            </div>
+
+            <div className="flex flex-col justify-between flex-1 py-1">
+              <div>
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-neutral-900 leading-tight mb-1 text-base">{item.name}</h3>
+                  {!item.isAvailable && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold uppercase">Tugagan</span>}
+                </div>
+                <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">{item.description}</p>
               </div>
 
-              {/* Content Section */}
-              <div className="flex flex-col justify-between flex-1 py-1">
-                <div>
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-neutral-900 leading-tight mb-1">{item.name}</h3>
-                    {!item.isAvailable && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold uppercase">Tugagan</span>}
-                  </div>
-                  <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">{item.description}</p>
+              <div className="flex items-end justify-between mt-2">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-neutral-400 font-medium">Narxi</span>
+                  <span className="font-bold text-lg text-neutral-900">{Number(item.price).toLocaleString()} <span className="text-xs font-normal">so'm</span></span>
                 </div>
 
-                <div className="flex items-end justify-between mt-2">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-neutral-400 font-medium">Narxi</span>
-                    <span className="font-bold text-lg text-neutral-900">{Number(item.price).toLocaleString()} <span className="text-xs font-normal">so'm</span></span>
-                  </div>
-
-                  {/* Add Button (Visual) */}
-                  <button className="bg-neutral-900 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-black transition-colors shadow-lg shadow-neutral-200">
-                    <span className="text-lg font-light leading-none pb-0.5">+</span>
-                  </button>
-                </div>
+                <button className="bg-black text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-800 transition-colors shadow-lg shadow-neutral-200">
+                  <span className="text-lg font-light leading-none pb-0.5">+</span>
+                </button>
               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+            </div>
+          </div>
+        ))}
 
-        {filteredItems.length === 0 && (
+        {filteredItems.length === 0 && menuItems.length > 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-neutral-400">
             <Search size={48} className="mb-2 opacity-20" />
             <p>Bu bo'limda taomlar yo'q</p>
@@ -171,7 +172,6 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
   );
 }
 
-// Skeleton Loader (Yuklanish effekti)
 function MenuSkeleton() {
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -187,10 +187,6 @@ function MenuSkeleton() {
               <Skeleton className="h-5 w-3/4" />
               <Skeleton className="h-3 w-full" />
               <Skeleton className="h-3 w-1/2" />
-              <div className="pt-2 flex justify-between items-end">
-                <Skeleton className="h-6 w-20" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
             </div>
           </div>
         ))}
