@@ -75,9 +75,7 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
             <span className="flex items-center gap-1 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
               <Star size={16} className="text-yellow-400 fill-yellow-400" /> 4.8
             </span>
-            {/* <span className="flex items-center gap-1 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-              <Clock size={16} className="text-blue-300" /> 15-20 min
-            </span> */}
+
             <span className="flex items-center gap-1 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
               <Info size={16} className="text-green-300" /> Ochiq
             </span>
