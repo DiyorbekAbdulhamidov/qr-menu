@@ -104,7 +104,6 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
         </div>
       </header>
 
-      {/* 3. Main Grid (RESPONSIVE QISM SHU YERDA) */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
 
         {menuItems.length === 0 && !loading && (
@@ -129,7 +128,6 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
                 !item.isAvailable && "opacity-60 grayscale pointer-events-none"
               )}
             >
-              {/* Rasm: Telefonda kichik (row), Katta ekranda katta (column) */}
               <div className="relative w-28 h-28 md:w-full md:h-56 flex-shrink-0 rounded-2xl overflow-hidden bg-neutral-100">
                 {item.imageUrl ? (
                   <Image
@@ -145,7 +143,6 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
                   </div>
                 )}
 
-                {/* Status Badge (faqat rasm ustida chiroyli turishi uchun) */}
                 {!item.isAvailable && (
                   <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
                     <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
@@ -155,7 +152,6 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
                 )}
               </div>
 
-              {/* Content */}
               <div className="flex flex-col justify-between flex-1 py-1">
                 <div>
                   <h3 className="font-bold text-neutral-900 leading-tight mb-1.5 text-lg group-hover:text-orange-600 transition-colors">
