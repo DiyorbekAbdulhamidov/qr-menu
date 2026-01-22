@@ -81,9 +81,8 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
             </span>
           </div>
         </div>
-        ////
       </div>
-
+      {/*  */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md shadow-sm border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <nav className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
