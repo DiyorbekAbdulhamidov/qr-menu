@@ -8,7 +8,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
 import { Button } from "@/components/ui/Button";
 import { MenuItem } from "@/lib/types";
-import { Loader2, Plus, Trash2, Eye, EyeOff, Download, ImagePlus, UtensilsCrossed, LogOut, LayoutDashboard, QrCode, Search, Tag } from "lucide-react";
+import { Loader2, Plus, Trash2, Eye, EyeOff, Download, ImagePlus, UtensilsCrossed, LogOut, LayoutDashboard, QrCode, Search, Tag, X } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import QRCode from "react-qr-code";
 
@@ -31,6 +31,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [baseUrl, setBaseUrl] = useState<string>("");
+
+  // Premium rebranding - Display name instead of slug
+  const [restaurantName, setRestaurantName] = useState("Sizning Brendingiz");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -201,115 +204,115 @@ export default function AdminDashboard() {
 
   if (loading) return (
     <div className="flex flex-col h-screen items-center justify-center bg-slate-50">
-      <div className="relative w-16 h-16 flex items-center justify-center">
-        <div className="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
-        <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
-        <UtensilsCrossed className="w-6 h-6 text-indigo-600 animate-pulse" />
+      <div className="relative w-20 h-20 flex items-center justify-center">
+        <div className="absolute inset-0 border-8 border-indigo-100 rounded-full animate-pulse"></div>
+        <div className="absolute inset-0 border-8 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+        <UtensilsCrossed className="w-8 h-8 text-indigo-600 animate-pulse" strokeWidth={1.5} />
       </div>
-      <p className="mt-4 text-slate-500 font-medium tracking-wide">Lutsente tizimi yuklanmoqda...</p>
+      <p className="mt-6 text-slate-500 font-semibold tracking-wide text-lg">Lutsente tizimi yuklanmoqda...</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 font-sans text-slate-900 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-950 selection:bg-indigo-500 selection:text-white">
       <Toaster position="top-center" reverseOrder={false}
         toastOptions={{
-          style: { borderRadius: '1rem', background: '#333', color: '#fff' }
+          style: { borderRadius: '1.25rem', background: '#1e293b', color: '#fff', padding: '1rem', fontWeight: 600 }
         }}
       />
 
       <div className="max-w-7xl mx-auto">
-        {/* PREMIUM HEADER */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6 bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white shadow-sm">
-          <div className="flex items-center gap-5">
-            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 text-white p-4 rounded-2xl shadow-lg shadow-indigo-500/20">
-              <LayoutDashboard size={28} strokeWidth={1.5} />
+        {/* REFINED HEADER */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-white p-7 rounded-[2.5rem] border border-slate-100 shadow-lg shadow-slate-100/50">
+          <div className="flex items-center gap-6">
+            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 text-white p-5 rounded-3xl shadow-xl shadow-indigo-500/30">
+              <LayoutDashboard size={32} strokeWidth={1} />
             </div>
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900">Boshqaruv Paneli</h1>
-              <p className="text-slate-500 text-sm mt-1 flex items-center gap-2">
-                Restoran ID: <span className="font-mono bg-slate-100 text-indigo-700 px-2.5 py-1 rounded-lg font-bold">{restaurantSlug}</span>
+              <h1 className="text-4xl font-extrabold tracking-tighter text-slate-950">Boshqaruv</h1>
+              <p className="text-slate-600 text-base mt-1 font-medium flex items-center gap-3">
+                Restoran: <span className="font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-xl text-sm">{restaurantName}</span>
               </p>
             </div>
           </div>
 
           <div className="flex gap-3 w-full md:w-auto">
-            <Button variant="outline" onClick={handleLogout} className="flex-1 md:flex-none border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors rounded-xl h-12">
-              <LogOut className="w-4 h-4 mr-2" /> Chiqish
+            <Button variant="outline" onClick={handleLogout} className="flex-1 md:flex-none border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all rounded-xl h-14 font-bold">
+              <LogOut className="w-5 h-5 mr-2.5" /> Chiqish
             </Button>
-            <Button onClick={() => setIsModalOpen(true)} className="flex-1 md:flex-none bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 rounded-xl h-12 px-6">
-              <Plus className="w-5 h-5 mr-2" /> Taom Qo'shish
+            <Button onClick={() => setIsModalOpen(true)} className="flex-1 md:flex-none bg-slate-950 text-white hover:bg-slate-800 shadow-2xl shadow-slate-950/20 rounded-xl h-14 px-8 font-bold text-lg">
+              <Plus className="w-6 h-6 mr-2.5" /> Qo'shish
             </Button>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
           {/* LEFT: MENU LIST */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
-                Menyudagi taomlar
+          <div className="lg:col-span-2 space-y-8">
+            <div className="flex items-center justify-between mb-2 p-1">
+              <h2 className="text-3xl font-extrabold flex items-center gap-3 text-slate-900 tracking-tight">
+                <UtensilsCrossed className="w-7 h-7 text-indigo-400" strokeWidth={2} /> Menyudagi taomlar
               </h2>
-              <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-1.5 rounded-full font-bold text-sm">
+              <div className="flex items-center gap-2.5 bg-indigo-50 text-indigo-700 px-5 py-2 rounded-full font-extrabold text-sm border border-indigo-100">
                 <Tag className="w-4 h-4" />
                 {items.length} ta pozitsiya
               </div>
             </div>
 
             {items.length === 0 ? (
-              <div className="text-center py-24 bg-white rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center">
-                <div className="bg-indigo-50 p-6 rounded-full mb-5">
-                  <UtensilsCrossed className="w-10 h-10 text-indigo-400" />
+              <div className="text-center py-28 bg-white rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center shadow-inner shadow-slate-50">
+                <div className="bg-indigo-50 p-7 rounded-full mb-6">
+                  <UtensilsCrossed className="w-12 h-12 text-indigo-400" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">Menyu hozircha bo'sh</h3>
-                <p className="text-slate-500 mb-8 max-w-sm mx-auto text-lg">Mijozlaringiz ko'rishi uchun birinchi taomni menyuga kiriting.</p>
-                <Button onClick={() => setIsModalOpen(true)} className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl px-8 py-6 h-auto text-lg">
-                  Birinchi taomni qo'shish
+                <h3 className="text-3xl font-extrabold text-slate-950 mb-3 tracking-tight">Menyuingiz bo'sh</h3>
+                <p className="text-slate-600 mb-10 max-w-sm mx-auto text-lg font-medium leading-relaxed">Mijozlaringiz ko'rishi uchun birinchi taomni kiritishni boshlang.</p>
+                <Button onClick={() => setIsModalOpen(true)} className="bg-indigo-600 text-white hover:bg-indigo-700 rounded-2xl px-10 py-7 h-auto text-xl font-bold shadow-2xl shadow-indigo-600/30">
+                  <Plus className="w-6 h-6 mr-2.5" /> Birinchi taomni qo'shish
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-5">
+              <div className="grid gap-6">
                 {items.map((item) => (
-                  <div key={item.id} className={`group bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between transition-all hover:shadow-xl hover:shadow-indigo-100/40 ${!item.isAvailable ? 'opacity-60 bg-slate-50/50' : ''}`}>
-                    <div className="flex items-center gap-6">
-                      <div className="w-24 h-24 bg-slate-50 rounded-2xl overflow-hidden relative border border-slate-100 flex-shrink-0">
+                  <div key={item.id} className={`group bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100/70 flex items-center justify-between transition-all hover:shadow-2xl hover:shadow-indigo-100/70 hover:border-indigo-100 ${!item.isAvailable ? 'opacity-60 bg-slate-50' : ''}`}>
+                    <div className="flex items-center gap-7">
+                      <div className="w-28 h-28 bg-slate-100 rounded-3xl overflow-hidden relative border border-slate-200 flex-shrink-0 shadow-inner">
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt={item.name} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700 ease-out" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100">
-                            <ImagePlus size={28} />
+                          <div className="w-full h-full flex items-center justify-center text-slate-300">
+                            <ImagePlus size={36} strokeWidth={1} />
                           </div>
                         )}
                       </div>
                       <div className="flex flex-col justify-center">
-                        <h3 className="font-bold text-xl text-slate-900 mb-2 leading-tight">{item.name}</h3>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-lg text-sm">
+                        <h3 className="font-extrabold text-2xl text-slate-950 mb-3 leading-tight tracking-tight">{item.name}</h3>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className="font-extrabold text-indigo-700 bg-indigo-50 px-4 py-1.5 rounded-xl text-sm border border-indigo-100">
                             {Number(item.price).toLocaleString()} so'm
                           </span>
-                          <span className="text-xs text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-lg">
+                          <span className="text-xs text-slate-600 font-bold bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
                             {item.category}
                           </span>
                         </div>
-                        {!item.isAvailable && <span className="text-xs text-red-500 font-bold mt-2 flex items-center gap-1"><EyeOff size={12} /> Vaqtincha yashirilgan</span>}
+                        {!item.isAvailable && <span className="text-xs text-red-600 font-bold mt-3 flex items-center gap-1.5"><EyeOff size={14} /> Vaqtincha menyuda emas</span>}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 pl-4">
+                    <div className="flex items-center gap-3 pl-5">
                       <button
                         onClick={() => toggleAvailability(item.id, item.isAvailable)}
-                        className={`p-3 rounded-xl transition-all ${item.isAvailable ? 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                        className={`p-3.5 rounded-2xl transition-all ${item.isAvailable ? 'text-slate-400 hover:text-emerald-700 hover:bg-emerald-50' : 'text-slate-400 hover:text-indigo-700 hover:bg-indigo-50'}`}
                         title={item.isAvailable ? "Yashirish" : "Ko'rsatish"}
                       >
-                        {item.isAvailable ? <Eye size={22} /> : <EyeOff size={22} />}
+                        {item.isAvailable ? <Eye size={24} /> : <EyeOff size={24} />}
                       </button>
                       <button
                         onClick={() => deleteItem(item.id)}
-                        className="p-3 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                        className="p-3.5 rounded-2xl text-slate-400 hover:text-red-700 hover:bg-red-50 transition-all"
                         title="O'chirish"
                       >
-                        <Trash2 size={22} />
+                        <Trash2 size={24} />
                       </button>
                     </div>
                   </div>
@@ -318,43 +321,43 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* RIGHT: PREMIUM QR CODE PANEL */}
+          {/* RIGHT: DEEP DARK QR CODE PANEL */}
           <div className="lg:col-span-1">
-            <div className="sticky top-8 bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl shadow-slate-900/20 border border-slate-800 flex flex-col items-center text-center overflow-hidden relative">
+            <div className="sticky top-10 bg-slate-950 p-9 rounded-[3rem] shadow-2xl shadow-slate-950/30 border border-slate-800 flex flex-col items-center text-center overflow-hidden relative">
 
-              {/* Decorative background blur */}
-              <div className="absolute -top-20 -right-20 w-48 h-48 bg-indigo-500/30 rounded-full blur-[60px]"></div>
-              <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-violet-500/20 rounded-full blur-[60px]"></div>
+              {/* Decorative premium blurs */}
+              <div className="absolute -top-16 -right-16 w-52 h-52 bg-indigo-600/40 rounded-full blur-[80px]"></div>
+              <div className="absolute -bottom-16 -left-16 w-52 h-52 bg-violet-600/30 rounded-full blur-[80px]"></div>
 
-              <div className="relative z-10 w-full">
-                <div className="inline-flex items-center gap-2 bg-slate-800/50 text-indigo-300 px-4 py-2 rounded-full mb-8 text-sm font-bold border border-slate-700/50 backdrop-blur-md">
-                  <QrCode size={16} /> Raqamli Menyu
+              <div className="relative z-10 w-full flex flex-col items-center">
+                <div className="inline-flex items-center gap-2.5 bg-slate-800/80 text-indigo-300 px-5 py-2.5 rounded-full mb-10 text-sm font-extrabold border border-slate-700/50 backdrop-blur-md shadow-inner">
+                  <QrCode size={18} /> Raqamli Menyu
                 </div>
 
-                <div className="bg-white p-5 rounded-3xl shadow-xl mb-8 mx-auto w-fit transform hover:scale-105 transition-transform duration-500">
+                <div className="bg-white p-6 rounded-[2rem] shadow-3xl mb-10 transform hover:scale-105 transition-transform duration-500 ease-out cursor-pointer border border-slate-100">
                   <QRCode
                     id="qr-code-svg"
                     value={baseUrl ? `${baseUrl}/menu/${restaurantSlug}` : ""}
-                    size={180}
+                    size={200}
                     level="H"
                     bgColor="#FFFFFF"
-                    fgColor="#0f172a"
+                    fgColor="#1e293b"
                   />
                 </div>
 
-                <h2 className="text-2xl font-black mb-2 text-white">QR Kod tayyor</h2>
-                <p className="text-slate-400 mb-8 text-sm leading-relaxed">Stollarga qo'yish uchun PNG formatida yuklab oling va chop eting.</p>
+                <h2 className="text-3xl font-extrabold mb-3 text-white tracking-tight">QR Kod Tayyor</h2>
+                <p className="text-slate-400 mb-10 text-base leading-relaxed font-medium">PNG formatida yuklab oling, chop eting va stollarga joylashtiring.</p>
 
-                <Button onClick={downloadQR} className="w-full bg-indigo-500 text-white hover:bg-indigo-600 py-6 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/25 border border-indigo-400/50">
-                  <Download className="w-5 h-5 mr-2" /> Yuklab olish
+                <Button onClick={downloadQR} className="w-full bg-indigo-600 text-white hover:bg-indigo-700 py-7 rounded-2xl font-extrabold text-xl shadow-xl shadow-indigo-600/30 border border-indigo-500/50">
+                  <Download className="w-6 h-6 mr-3" /> PNG Yuklash
                 </Button>
 
                 <a
                   href={`/menu/${restaurantSlug}`}
                   target="_blank"
-                  className="mt-6 text-sm text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-2 font-medium"
+                  className="mt-8 text-base text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-2.5 font-semibold group"
                 >
-                  <Search size={16} /> Menyuni ko'rish
+                  <Search size={18} className="group-hover:text-indigo-400 transition-colors" /> Menyuni ochiq havola orqali ko'rish
                 </a>
               </div>
             </div>
@@ -364,38 +367,40 @@ export default function AdminDashboard() {
 
       {/* PREMIUM MODAL: ADD ITEM */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-xl p-8 shadow-2xl scale-100 overflow-y-auto max-h-[90vh]">
-            <div className="flex justify-between items-center mb-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xl p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] w-full max-w-2xl p-10 shadow-3xl scale-100 overflow-y-auto max-h-[95vh] border border-slate-100">
+            <div className="flex justify-between items-start mb-10 gap-4">
               <div>
-                <h2 className="text-2xl font-black text-slate-900">Yangi Taom</h2>
-                <p className="text-slate-500 text-sm mt-1">Menyuga yangi pozitsiya qo'shish</p>
+                <h2 className="text-3xl font-extrabold text-slate-950 tracking-tight">Menyuga Taom Qo'shish</h2>
+                <p className="text-slate-600 text-base mt-2 font-medium">Barcha kerakli ma'lumotlarni kiriting va saqlang</p>
               </div>
-              <button onClick={closeModal} className="p-3 bg-slate-50 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">✕</button>
+              <button onClick={closeModal} className="p-3 bg-slate-100 rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+                <X size={20} />
+              </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-7">
 
-              {/* Image Upload Area */}
+              {/* Enhanced Image Upload Area */}
               <div>
                 <label className="block w-full cursor-pointer group">
-                  <div className={`relative w-full h-52 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center overflow-hidden ${imagePreview ? 'border-transparent bg-slate-900' : 'border-slate-300 bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-400'}`}>
+                  <div className={`relative w-full h-60 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center overflow-hidden ${imagePreview ? 'border-transparent bg-slate-950' : 'border-slate-300 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-400'}`}>
                     {imagePreview ? (
                       <>
-                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover opacity-90 group-hover:opacity-50 transition-opacity" />
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity duration-300" />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full font-medium text-sm border border-white/30">
+                          <span className="bg-white/10 backdrop-blur-lg text-white px-6 py-3 rounded-2xl font-extrabold text-base border border-white/20 shadow-lg">
                             Boshqa rasm tanlash
                           </span>
                         </div>
                       </>
                     ) : (
                       <>
-                        <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 mb-4 group-hover:scale-110 group-hover:text-indigo-600 transition-all duration-300">
-                          <ImagePlus className="w-8 h-8 text-slate-400 group-hover:text-indigo-500" />
+                        <div className="p-5 bg-white rounded-2xl shadow-lg border border-slate-100 mb-5 group-hover:scale-110 group-hover:text-indigo-600 transition-all duration-300">
+                          <ImagePlus className="w-10 h-10 text-slate-400 group-hover:text-indigo-500" strokeWidth={1.5} />
                         </div>
-                        <span className="text-base text-slate-700 font-bold">Rasm yuklash</span>
-                        <span className="text-sm text-slate-400 mt-1">PNG, JPG (Max: 5MB)</span>
+                        <span className="text-lg text-slate-800 font-extrabold mb-1">Yuqori sifatli rasm yuklang</span>
+                        <span className="text-sm text-slate-500 font-medium">PNG, JPG (Tavsiya: kvadrat shakl, max: 5MB)</span>
                       </>
                     )}
                   </div>
@@ -410,10 +415,10 @@ export default function AdminDashboard() {
 
               {/* Name */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Taom nomi <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-extrabold text-slate-800 mb-2.5 pl-1">Taom Nomi <span className="text-red-500">*</span></label>
                 <input
-                  placeholder="Masalan: Choyxona palov"
-                  className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none placeholder:text-slate-400 font-semibold text-slate-900"
+                  placeholder="Masalan: Maxsus Choyxona Palovi"
+                  className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none placeholder:text-slate-400 font-semibold text-slate-950 text-lg"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -421,12 +426,12 @@ export default function AdminDashboard() {
               </div>
 
               {/* Category & Price */}
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Bo'lim <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-extrabold text-slate-800 mb-2.5 pl-1">Menyu Bo'limi <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <select
-                      className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none appearance-none font-semibold text-slate-900 cursor-pointer"
+                      className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none appearance-none font-semibold text-slate-950 cursor-pointer text-lg"
                       value={formData.category}
                       onChange={e => setFormData({ ...formData, category: e.target.value })}
                     >
@@ -434,43 +439,43 @@ export default function AdminDashboard() {
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 font-bold">▼</div>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Narxi <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-extrabold text-slate-800 mb-2.5 pl-1">Sotuv Narxi <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <input
                       placeholder="0"
                       type="number"
-                      className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none font-bold text-slate-900 pl-4 pr-16"
+                      className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none font-extrabold text-slate-950 text-xl pl-5 pr-20"
                       value={formData.price}
                       onChange={e => setFormData({ ...formData, price: e.target.value })}
                       required
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded-md text-xs">Uzs</span>
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 font-extrabold bg-slate-100 px-3 py-1.5 rounded-xl text-xs uppercase tracking-wider border border-slate-200">Uzs</span>
                   </div>
                 </div>
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Izoh <span className="text-slate-400 font-normal">(ixtiyoriy)</span></label>
+                <label className="block text-sm font-extrabold text-slate-800 mb-2.5 pl-1">Tarkibi yoki Izoh <span className="text-slate-400 font-medium">(ixtiyoriy)</span></label>
                 <textarea
-                  placeholder="Tarkibi: qo'y go'shti, lazzatli guruch va hk..."
-                  className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none placeholder:text-slate-400 font-medium min-h-[100px] resize-none"
+                  placeholder="Tarkibi: lazzatli guruch, go'sht, sabzi, maxsus ziravorlar va hk..."
+                  className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none placeholder:text-slate-400 font-medium min-h-[120px] resize-none text-base leading-relaxed"
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
 
               {/* Actions */}
-              <div className="flex gap-4 pt-4">
-                <Button type="button" variant="outline" className="flex-1 py-6 rounded-2xl border-slate-200 text-slate-700 font-bold hover:bg-slate-50" onClick={closeModal}>
+              <div className="flex gap-4 pt-6 border-t border-slate-100">
+                <Button type="button" variant="outline" className="flex-1 py-7 rounded-2xl border-slate-200 text-slate-700 font-extrabold hover:bg-slate-100 h-auto text-lg transition-colors" onClick={closeModal}>
                   Bekor qilish
                 </Button>
-                <Button type="submit" className="flex-[2] py-6 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 text-lg" isLoading={isSubmitting}>
-                  {isSubmitting ? "Saqlanmoqda..." : "Saqlash"}
+                <Button type="submit" className="flex-[2] py-7 rounded-2xl bg-indigo-600 text-white font-extrabold hover:bg-indigo-700 shadow-2xl shadow-indigo-600/30 text-xl h-auto transition-all" isLoading={isSubmitting}>
+                  {isSubmitting ? "Saqlanmoqda..." : "Menyuga Qo'shish"}
                 </Button>
               </div>
             </form>
