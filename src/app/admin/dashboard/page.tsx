@@ -8,9 +8,12 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
 import { Button } from "@/components/ui/Button";
 import { MenuItem } from "@/lib/types";
-import { Loader2, Plus, Trash2, Eye, EyeOff, Download, ImagePlus, UtensilsCrossed, LogOut, LayoutDashboard, QrCode, Search, Tag, X, MapPin, ChefHat } from "lucide-react";
+import { Plus, Trash2, Eye, EyeOff, Download, ImagePlus, UtensilsCrossed, LogOut, LayoutDashboard, QrCode, Search, Tag, X, ChefHat } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import QRCode from "react-qr-code";
+import { useAppTheme } from "@/lib/useAppTheme";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { cn } from "@/lib/utils";
 
 // Tayyor kategoriyalar (Ularga moslashtirilgan)
 const PREDEFINED_CATEGORIES = [
@@ -27,6 +30,7 @@ const PREDEFINED_CATEGORIES = [
 ];
 
 export default function AdminDashboard() {
+  const { mode, isDark, cycleTheme } = useAppTheme();
   const [user, setUser] = useState<User | null>(null);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [restaurantSlug, setRestaurantSlug] = useState<string>("");
@@ -35,7 +39,7 @@ export default function AdminDashboard() {
   const [baseUrl, setBaseUrl] = useState<string>("");
 
   // Premium rebranding - Haqiqiy nomi
-  const [restaurantName, setRestaurantName] = useState("AMIR RESTAURANT");
+  const [restaurantName, setRestaurantName] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -63,8 +67,9 @@ export default function AdminDashboard() {
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-          // XATO TO'G'IRLANDI: docs[0] qilib birinchi elementni oldik
           const restDoc = querySnapshot.docs[0];
+          const rd = restDoc.data() as { name?: string };
+          setRestaurantName(typeof rd.name === "string" && rd.name.trim() ? rd.name : "Restoran");
 
           setRestaurantSlug(restDoc.id);
           fetchItems(restDoc.id);
@@ -177,23 +182,31 @@ export default function AdminDashboard() {
   }
 
   const downloadQR = () => {
+    if (!baseUrl || !restaurantSlug) {
+      toast.error("QR tayyor emas — sahifani yangilab qayta urinib ko‘ring.");
+      return;
+    }
     const svg = document.getElementById("qr-code-svg");
-    if (svg) {
-      const svgData = new XMLSerializer().serializeToString(svg);
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      const img = new window.Image();
-      const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
+    if (!svg) {
+      toast.error("QR topilmadi.");
+      return;
+    }
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new window.Image();
+    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
 
-      img.onload = () => {
-        canvas.width = 1200;
-        canvas.height = 1200;
-        if (ctx) {
-          ctx.fillStyle = "#FFFFFF";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, 1200, 1200);
-        }
+    img.onload = () => {
+      canvas.width = 1200;
+      canvas.height = 1200;
+      if (ctx) {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, 1200, 1200);
+      }
+      try {
         const pngUrl = canvas.toDataURL("image/png");
         const downloadLink = document.createElement("a");
         downloadLink.href = pngUrl;
@@ -201,51 +214,119 @@ export default function AdminDashboard() {
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
-      };
-      img.src = url;
-    }
+        URL.revokeObjectURL(url);
+        toast.success("PNG yuklandi");
+      } catch {
+        toast.error("Rasmni yaratib bo‘lmadi.");
+        URL.revokeObjectURL(url);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      toast.error("QR rasmga aylantirilmadi.");
+    };
+    img.src = url;
   };
 
   if (loading) return (
-    <div className="flex flex-col h-screen items-center justify-center bg-[#080808]">
-      <div className="relative w-20 h-20 flex items-center justify-center">
-        <div className="absolute inset-0 border-8 border-[#0D1C0D] rounded-full animate-pulse"></div>
-        <div className="absolute inset-0 border-8 border-[#D4AF37] rounded-full border-t-transparent animate-spin"></div>
-        <UtensilsCrossed className="w-8 h-8 text-[#D4AF37] animate-pulse" strokeWidth={1.5} />
+    <div
+      className={cn(
+        "flex h-screen flex-col items-center justify-center",
+        isDark ? "bg-[#080808]" : "bg-[#f4f1ea]"
+      )}
+    >
+      <div className="relative flex h-20 w-20 items-center justify-center">
+        <div
+          className={cn(
+            "absolute inset-0 animate-pulse rounded-full border-8",
+            isDark ? "border-[#0D1C0D]" : "border-[#e8e4dc]"
+          )}
+        />
+        <div className="absolute inset-0 animate-spin rounded-full border-8 border-[#D4AF37] border-t-transparent" />
+        <UtensilsCrossed className="relative h-8 w-8 animate-pulse text-[#D4AF37]" strokeWidth={1.5} />
       </div>
-      <p className="mt-6 text-zinc-400 font-semibold tracking-wide text-lg">Amir paneli yuklanmoqda...</p>
+      <p className={cn("mt-6 text-lg font-semibold tracking-wide", isDark ? "text-zinc-400" : "text-zinc-600")}>
+        Panel yuklanmoqda...
+      </p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#080808] p-4 md:p-8 font-sans text-white selection:bg-[#D4AF37] selection:text-white">
-      <Toaster position="top-center" reverseOrder={false}
+    <div
+      className={cn(
+        "min-h-screen p-4 font-sans selection:bg-[#D4AF37] md:p-8",
+        isDark ? "bg-[#080808] text-white selection:text-white" : "bg-[#f4f1ea] text-[#0a1915] selection:text-[#0a1915]"
+      )}
+    >
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
         toastOptions={{
-          style: { borderRadius: '1.25rem', background: '#1A1A1A', color: '#D4AF37', padding: '1rem', border: '1px solid rgba(255,255,255,0.05)', fontWeight: 600 }
+          style: isDark
+            ? {
+                borderRadius: "1.25rem",
+                background: "#1A1A1A",
+                color: "#D4AF37",
+                padding: "1rem",
+                border: "1px solid rgba(255,255,255,0.05)",
+                fontWeight: 600,
+              }
+            : {
+                borderRadius: "1.25rem",
+                background: "#ffffff",
+                color: "#0a2f26",
+                padding: "1rem",
+                border: "1px solid rgba(10,47,38,0.12)",
+                fontWeight: 600,
+              },
         }}
       />
 
-      <div className="max-w-7xl mx-auto">
-        {/* PREMIUM HEADER */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-[#101010] p-7 rounded-[2.5rem] border border-white/5 shadow-2xl shadow-black/10">
+      <ThemeToggle mode={mode} onCycle={cycleTheme} isDark={isDark} className="fixed right-4 z-50 top-[max(1rem,env(safe-area-inset-top))]" />
+
+      <div className="mx-auto max-w-7xl pt-14">
+        {/* HEADER */}
+        <header
+          className={cn(
+            "mb-10 flex flex-col items-start justify-between gap-6 rounded-[2.5rem] border p-7 shadow-2xl md:flex-row md:items-center",
+            isDark ? "border-white/5 bg-[#101010] shadow-black/10" : "border-[#0a2f26]/10 bg-white shadow-[#0a2f26]/5"
+          )}
+        >
           <div className="flex items-center gap-6">
-            <div className="bg-[#1A2F1A] border border-[#D4AF37]/30 text-[#D4AF37] p-5 rounded-3xl shadow-lg">
+            <div className="rounded-3xl border border-[#D4AF37]/30 bg-[#1A2F1A] p-5 text-[#D4AF37] shadow-lg">
               <LayoutDashboard size={32} strokeWidth={1} />
             </div>
             <div>
-              <h1 className="text-4xl font-extrabold tracking-tighter text-white">Boshqaruv</h1>
-              <p className="text-zinc-400 text-base mt-1 font-medium flex items-center gap-3">
-                Restoran: <span className="font-bold text-[#D4AF37] bg-[#1A1F1A] px-3 py-1 rounded-xl text-sm">{restaurantName}</span>
+              <h1 className={cn("text-4xl font-extrabold tracking-tighter", isDark ? "text-white" : "text-[#0a1915]")}>
+                Boshqaruv
+              </h1>
+              <p className={cn("mt-1 flex flex-wrap items-center gap-3 text-base font-medium", isDark ? "text-zinc-400" : "text-zinc-600")}>
+                Restoran:{" "}
+                <span className="rounded-xl bg-[#1A1F1A] px-3 py-1 text-sm font-bold text-[#D4AF37]">
+                  {restaurantName || "Restoran"}
+                </span>
               </p>
             </div>
           </div>
 
-          <div className="flex gap-3 w-full md:w-auto">
-            <Button variant="outline" onClick={handleLogout} className="flex-1 md:flex-none border-white/5 text-zinc-300 hover:bg-red-950/20 hover:text-red-400 hover:border-red-950/20 transition-all rounded-xl h-14 font-bold">
-              <LogOut className="w-5 h-5 mr-2.5" /> Chiqish
+          <div className="flex w-full gap-3 md:w-auto">
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className={cn(
+                "h-14 flex-1 rounded-xl font-bold transition-all md:flex-none",
+                isDark
+                  ? "border-white/10 text-zinc-300 hover:border-red-950/30 hover:bg-red-950/20 hover:text-red-400"
+                  : "border-[#0a2f26]/15 text-[#0a1915] hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+              )}
+            >
+              <LogOut className="mr-2.5 h-5 w-5" /> Chiqish
             </Button>
-            <Button onClick={() => setIsModalOpen(true)} className="flex-1 md:flex-none bg-[#D4AF37] text-black hover:bg-white shadow-2xl shadow-[#D4AF37]/20 rounded-xl h-14 px-8 font-bold text-lg transition-colors">
-              <Plus className="w-6 h-6 mr-2.5" /> Qo'shish
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              className="h-14 flex-1 rounded-xl bg-[#D4AF37] px-8 text-lg font-bold text-black shadow-2xl shadow-[#D4AF37]/20 transition-colors hover:bg-white md:flex-none"
+            >
+              <Plus className="mr-2.5 h-6 w-6" /> Qo'shish
             </Button>
           </div>
         </header>
@@ -254,33 +335,57 @@ export default function AdminDashboard() {
 
           {/* LEFT: MENU LIST */}
           <div className="lg:col-span-2 space-y-8">
-            <div className="flex items-center justify-between mb-2 p-1">
-              <h2 className="text-3xl font-extrabold flex items-center gap-3 text-white tracking-tight">
-                <ChefHat className="w-7 h-7 text-[#D4AF37]" strokeWidth={2} /> Menyudagi taomlar
+            <div className="mb-2 flex items-center justify-between p-1">
+              <h2
+                className={cn(
+                  "flex items-center gap-3 text-3xl font-extrabold tracking-tight",
+                  isDark ? "text-white" : "text-[#0a1915]"
+                )}
+              >
+                <ChefHat className="h-7 w-7 text-[#D4AF37]" strokeWidth={2} /> Menyudagi taomlar
               </h2>
-              <div className="flex items-center gap-2.5 bg-[#1A1F1A] text-[#D4AF37] px-5 py-2 rounded-full font-extrabold text-sm border border-white/5">
-                <Tag className="w-4 h-4" />
+              <div className="flex items-center gap-2.5 rounded-full border border-white/5 bg-[#1A1F1A] px-5 py-2 text-sm font-extrabold text-[#D4AF37]">
+                <Tag className="h-4 w-4" />
                 {items.length} ta pozitsiya
               </div>
             </div>
 
             {items.length === 0 ? (
-              <div className="text-center py-28 bg-[#101010] rounded-[3rem] border-2 border-dashed border-white/5 flex flex-col items-center">
-                <div className="bg-[#1A1F1A] p-7 rounded-full mb-6 border border-white/5">
-                  <ChefHat className="w-12 h-12 text-[#D4AF37]" strokeWidth={1.5} />
+              <div
+                className={cn(
+                  "flex flex-col items-center rounded-[3rem] border-2 border-dashed py-28 text-center",
+                  isDark ? "border-white/5 bg-[#101010]" : "border-[#0a2f26]/12 bg-white"
+                )}
+              >
+                <div className="mb-6 rounded-full border border-white/5 bg-[#1A1F1A] p-7">
+                  <ChefHat className="h-12 w-12 text-[#D4AF37]" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-3xl font-extrabold text-white mb-3 tracking-tight">Menyu hozircha bo'sh</h3>
-                <p className="text-zinc-500 mb-10 max-w-sm mx-auto text-lg font-medium leading-relaxed">Mijozlaringiz ko'rishi uchun birinchi taomni kiritishni boshlang.</p>
-                <Button onClick={() => setIsModalOpen(true)} className="bg-[#D4AF37] text-black hover:bg-white rounded-2xl px-10 py-7 h-auto text-xl font-bold shadow-2xl shadow-[#D4AF37]/30 transition-colors">
-                  <Plus className="w-6 h-6 mr-2.5" /> Birinchi taomni qo'shish
+                <h3 className={cn("mb-3 text-3xl font-extrabold tracking-tight", isDark ? "text-white" : "text-[#0a1915]")}>
+                  Menyu hozircha bo'sh
+                </h3>
+                <p className={cn("mx-auto mb-10 max-w-sm text-lg font-medium leading-relaxed", isDark ? "text-zinc-500" : "text-zinc-600")}>
+                  Mijozlaringiz ko'rishi uchun birinchi taomni kiritishni boshlang.
+                </p>
+                <Button
+                  onClick={() => setIsModalOpen(true)}
+                  className="h-auto rounded-2xl bg-[#D4AF37] px-10 py-7 text-xl font-bold text-black shadow-2xl shadow-[#D4AF37]/30 transition-colors hover:bg-white"
+                >
+                  <Plus className="mr-2.5 h-6 w-6" /> Birinchi taomni qo'shish
                 </Button>
               </div>
             ) : (
               <div className="grid gap-6">
                 {items.map((item) => (
-                  <div key={item.id} className={`group bg-[#101010] p-6 rounded-[2rem] shadow-sm border border-white/5 flex items-center justify-between transition-all hover:shadow-2xl hover:shadow-[#D4AF37]/10 hover:border-[#D4AF37]/30 ${!item.isAvailable ? 'opacity-60 bg-[#080808]/50' : ''}`}>
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "group flex items-center justify-between rounded-[2rem] border p-6 shadow-sm transition-all hover:border-[#D4AF37]/30 hover:shadow-2xl hover:shadow-[#D4AF37]/10",
+                      isDark ? "border-white/5 bg-[#101010]" : "border-[#0a2f26]/10 bg-white",
+                      !item.isAvailable && (isDark ? "bg-[#080808]/50 opacity-60" : "bg-zinc-100/80 opacity-70")
+                    )}
+                  >
                     <div className="flex items-center gap-7">
-                      <div className="w-28 h-28 bg-[#1A1F1A] rounded-3xl overflow-hidden relative border border-white/5 flex-shrink-0 shadow-inner">
+                      <div className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-3xl border border-white/5 bg-[#1A1F1A] shadow-inner">
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt={item.name} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700 ease-out" />
                         ) : (
@@ -290,30 +395,53 @@ export default function AdminDashboard() {
                         )}
                       </div>
                       <div className="flex flex-col justify-center">
-                        <h3 className="font-extrabold text-2xl text-white mb-3 leading-tight tracking-tight group-hover:text-[#D4AF37] transition-colors">{item.name}</h3>
+                        <h3
+                          className={cn(
+                            "mb-3 text-2xl font-extrabold leading-tight tracking-tight transition-colors group-hover:text-[#D4AF37]",
+                            isDark ? "text-white" : "text-[#0a1915]"
+                          )}
+                        >
+                          {item.name}
+                        </h3>
                         <div className="flex flex-wrap items-center gap-2.5">
-                          <span className="font-extrabold text-[#D4AF37] bg-[#1A1F1A] px-4 py-1.5 rounded-xl text-sm border border-white/5">
+                          <span className="rounded-xl border border-white/5 bg-[#1A1F1A] px-4 py-1.5 text-sm font-extrabold text-[#D4AF37]">
                             {Number(item.price).toLocaleString()} so'm
                           </span>
-                          <span className="text-xs text-zinc-300 font-bold bg-[#1A1A1A] px-3 py-1 rounded-lg border border-white/5">
+                          <span
+                            className={cn(
+                              "rounded-lg border px-3 py-1 text-xs font-bold",
+                              isDark ? "border-white/5 bg-[#1A1A1A] text-zinc-300" : "border-[#0a2f26]/10 bg-[#f4f1ea] text-[#0a1915]"
+                            )}
+                          >
                             {item.category}
                           </span>
                         </div>
-                        {!item.isAvailable && <span className="text-xs text-red-400 font-bold mt-3 flex items-center gap-1.5"><EyeOff size={14} /> Vaqtincha menyuda emas</span>}
+                        {!item.isAvailable && (
+                          <span className="mt-3 flex items-center gap-1.5 text-xs font-bold text-red-400">
+                            <EyeOff size={14} /> Vaqtincha menyuda emas
+                          </span>
+                        )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 pl-5">
                       <button
+                        type="button"
                         onClick={() => toggleAvailability(item.id, item.isAvailable)}
-                        className={`p-3.5 rounded-2xl transition-all ${item.isAvailable ? 'text-zinc-500 hover:text-emerald-400 hover:bg-[#1A2F1A]' : 'text-zinc-500 hover:text-[#D4AF37] hover:bg-[#1A1F1A]'}`}
+                        className={cn(
+                          "rounded-2xl p-3.5 transition-all",
+                          item.isAvailable
+                            ? "text-zinc-500 hover:bg-[#1A2F1A] hover:text-emerald-400"
+                            : "text-zinc-500 hover:bg-[#1A1F1A] hover:text-[#D4AF37]"
+                        )}
                         title={item.isAvailable ? "Yashirish" : "Ko'rsatish"}
                       >
                         {item.isAvailable ? <Eye size={24} /> : <EyeOff size={24} />}
                       </button>
                       <button
+                        type="button"
                         onClick={() => deleteItem(item.id)}
-                        className="p-3.5 rounded-2xl text-zinc-500 hover:text-red-400 hover:bg-red-950/30 transition-all"
+                        className="rounded-2xl p-3.5 text-zinc-500 transition-all hover:bg-red-950/30 hover:text-red-400"
                         title="O'chirish"
                       >
                         <Trash2 size={24} />
@@ -325,9 +453,9 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* RIGHT: PREMIUM QR CODE PANEL (Deep Green) */}
+          {/* QR */}
           <div className="lg:col-span-1">
-            <div className="sticky top-10 bg-[#0D1C0D] p-9 rounded-[3rem] shadow-2xl shadow-black/20 border border-[#D4AF37]/20 flex flex-col items-center text-center overflow-hidden relative">
+            <div className="relative sticky top-10 overflow-hidden rounded-[3rem] border border-[#D4AF37]/20 bg-[#0D1C0D] p-9 text-center shadow-2xl shadow-black/20">
 
               {/* Oltin va Yashil bezaklar */}
               <div className="absolute -top-16 -right-16 w-52 h-52 bg-[#D4AF37]/10 rounded-full blur-[80px]"></div>
@@ -339,30 +467,48 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Skaner qilinadigan qism - Oq fonda qora bo'lishi shart */}
-                <div className="bg-white p-6 rounded-[2rem] shadow-3xl mb-10 transform hover:scale-105 transition-transform duration-500 ease-out cursor-pointer border border-zinc-100">
-                  <QRCode
-                    id="qr-code-svg"
-                    value={baseUrl ? `${baseUrl}/menu/${restaurantSlug}` : ""}
-                    size={200}
-                    level="H"
-                    bgColor="#FFFFFF"
-                    fgColor="#000000" // Qora rangda bo'lishi skaner uchun yaxshi
-                  />
+                <div className="mb-10 cursor-pointer rounded-[2rem] border border-zinc-100 bg-white p-6 shadow-xl transition-transform duration-500 ease-out hover:scale-[1.02]">
+                  {baseUrl && restaurantSlug ? (
+                    <QRCode
+                      id="qr-code-svg"
+                      value={`${baseUrl}/menu/${restaurantSlug}`}
+                      size={200}
+                      level="H"
+                      bgColor="#FFFFFF"
+                      fgColor="#000000"
+                    />
+                  ) : (
+                    <div className="flex h-[200px] w-[200px] flex-col items-center justify-center gap-2 text-sm text-zinc-500">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#D4AF37] border-t-transparent" />
+                      QR tayyorlanmoqda...
+                    </div>
+                  )}
                 </div>
 
-                <h2 className="text-3xl font-extrabold mb-3 text-white tracking-tight">QR Kod Tayyor</h2>
-                <p className="text-zinc-400 mb-10 text-base leading-relaxed font-medium">PNG formatida yuklab oling, chop eting va stollarga joylashtiring.</p>
+                <h2 className="mb-3 text-3xl font-extrabold tracking-tight text-white">QR kod</h2>
+                <p className="mb-10 text-base font-medium leading-relaxed text-zinc-400">
+                  PNG yuklab oling, chop eting va stollarga qo‘ying. Skaner uchun oq fon va qora nuqta tavsiya etiladi.
+                </p>
 
-                <Button onClick={downloadQR} className="w-full bg-[#1A1F1A] text-[#D4AF37] hover:bg-white hover:text-black py-7 rounded-2xl font-extrabold text-xl shadow-xl shadow-black/10 border border-[#D4AF37]/30 transition-all">
-                  <Download className="w-6 h-6 mr-3" /> PNG Yuklash
+                <Button
+                  type="button"
+                  onClick={downloadQR}
+                  disabled={!baseUrl || !restaurantSlug}
+                  className="w-full rounded-2xl border border-[#D4AF37]/30 bg-[#1A1F1A] py-7 text-xl font-extrabold text-[#D4AF37] shadow-xl shadow-black/10 transition-all hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Download className="mr-3 h-6 w-6" /> PNG yuklash
                 </Button>
 
                 <a
-                  href={`/menu/${restaurantSlug}`}
+                  href={restaurantSlug ? `/menu/${restaurantSlug}` : "#"}
                   target="_blank"
-                  className="mt-8 text-base text-zinc-500 hover:text-[#D4AF37] transition-colors flex items-center justify-center gap-2.5 font-semibold group"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "mt-8 flex items-center justify-center gap-2.5 text-base font-semibold transition-colors",
+                    restaurantSlug ? "text-zinc-500 hover:text-[#D4AF37]" : "pointer-events-none text-zinc-600"
+                  )}
                 >
-                  <Search size={18} className="group-hover:text-[#D4AF37] transition-colors" /> Menyuni ochiq havola orqali ko'rish
+                  <Search size={18} /> Menyuni brauzerda ochish
                 </a>
               </div>
             </div>
@@ -372,40 +518,67 @@ export default function AdminDashboard() {
 
       {/* PREMIUM MODAL: ADD ITEM */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 animate-in fade-in duration-300">
-          <div className="bg-[#101010] rounded-[3rem] w-full max-w-2xl p-10 shadow-3xl scale-100 overflow-y-auto max-h-[95vh] border border-white/5">
-            <div className="flex justify-between items-start mb-10 gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xl">
+          <div
+            className={cn(
+              "max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-[3rem] border p-10 shadow-2xl",
+              isDark ? "border-white/5 bg-[#101010]" : "border-[#0a2f26]/10 bg-white"
+            )}
+          >
+            <div className="mb-10 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">Menyuga Taom Qo'shish</h2>
-                <p className="text-zinc-400 text-base mt-2 font-medium">Barcha kerakli ma'lumotlarni kiriting va saqlang</p>
+                <h2 className={cn("text-3xl font-extrabold tracking-tight", isDark ? "text-white" : "text-[#0a1915]")}>
+                  Menyuga taom qo&apos;shish
+                </h2>
+                <p className={cn("mt-2 text-base font-medium", isDark ? "text-zinc-400" : "text-zinc-600")}>
+                  Barcha kerakli ma&apos;lumotlarni kiriting va saqlang
+                </p>
               </div>
-              <button onClick={closeModal} className="p-3 bg-[#1A1A1A] rounded-full hover:bg-zinc-800 text-zinc-500 transition-colors">
+              <button
+                type="button"
+                onClick={closeModal}
+                className={cn(
+                  "rounded-full p-3 transition-colors",
+                  isDark ? "bg-[#1A1A1A] text-zinc-500 hover:bg-zinc-800" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                )}
+              >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-7">
 
-              {/* Enhanced Image Upload Area */}
+              {/* Rasm */}
               <div>
-                <label className="block w-full cursor-pointer group">
-                  <div className={`relative w-full h-60 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center overflow-hidden ${imagePreview ? 'border-transparent bg-[#1A1F1A]' : 'border-white/5 bg-[#101010] hover:bg-[#1A1F1A]/50 hover:border-[#D4AF37]/40'}`}>
+                <label className="group block w-full cursor-pointer">
+                  <div
+                    className={cn(
+                      "relative flex h-60 flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed transition-all",
+                      imagePreview
+                        ? "border-transparent bg-[#1A1F1A]"
+                        : isDark
+                          ? "border-white/5 bg-[#101010] hover:border-[#D4AF37]/40 hover:bg-[#1A1F1A]/50"
+                          : "border-[#0a2f26]/15 bg-[#f4f1ea] hover:border-[#D4AF37]/50"
+                    )}
+                  >
                     {imagePreview ? (
                       <>
-                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity duration-300" />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="bg-white/10 backdrop-blur-lg text-white px-6 py-3 rounded-2xl font-extrabold text-base border border-white/20 shadow-lg">
+                        <img src={imagePreview} alt="" className="h-full w-full object-cover opacity-80 transition-opacity duration-300 group-hover:opacity-40" />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                          <span className="rounded-2xl border border-white/20 bg-white/10 px-6 py-3 text-base font-extrabold text-white shadow-lg backdrop-blur-lg">
                             Boshqa rasm tanlash
                           </span>
                         </div>
                       </>
                     ) : (
                       <>
-                        <div className="p-5 bg-[#1A1F1A] rounded-2xl shadow-lg border border-white/5 mb-5 group-hover:scale-110 transition-all duration-300">
-                          <ImagePlus className="w-10 h-10 text-zinc-500 group-hover:text-[#D4AF37]" strokeWidth={1.5} />
+                        <div className="mb-5 rounded-2xl border border-white/5 bg-[#1A1F1A] p-5 shadow-lg transition-all duration-300 group-hover:scale-110">
+                          <ImagePlus className="h-10 w-10 text-zinc-500 group-hover:text-[#D4AF37]" strokeWidth={1.5} />
                         </div>
-                        <span className="text-lg text-white font-extrabold mb-1">Yuqori sifatli rasm yuklang</span>
-                        <span className="text-sm text-zinc-500 font-medium">PNG, JPG (Max: 5MB)</span>
+                        <span className={cn("mb-1 text-lg font-extrabold", isDark ? "text-white" : "text-[#0a1915]")}>
+                          Yuqori sifatli rasm yuklang
+                        </span>
+                        <span className="text-sm font-medium text-zinc-500">PNG, JPG (max 5MB)</span>
                       </>
                     )}
                   </div>
@@ -418,69 +591,103 @@ export default function AdminDashboard() {
                 </label>
               </div>
 
-              {/* Name */}
               <div>
-                <label className="block text-sm font-extrabold text-zinc-300 mb-2.5 pl-1">Taom Nomi <span className="text-red-500">*</span></label>
+                <label className={cn("mb-2.5 block pl-1 text-sm font-extrabold", isDark ? "text-zinc-300" : "text-[#0a1915]")}>
+                  Taom nomi <span className="text-red-500">*</span>
+                </label>
                 <input
-                  placeholder="Masalan: Maxsus Choyxona Palovi"
-                  className="w-full p-5 bg-[#1A1F1A] rounded-2xl border border-white/5 focus:bg-[#101010] focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10 transition-all outline-none placeholder:text-zinc-600 font-semibold text-white text-lg"
+                  placeholder="Masalan: maxsus palov"
+                  className={cn(
+                    "w-full rounded-2xl border p-5 text-lg font-semibold outline-none transition-all placeholder:text-zinc-500 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10",
+                    isDark
+                      ? "border-white/5 bg-[#1A1F1A] text-white focus:bg-[#101010]"
+                      : "border-[#0a2f26]/12 bg-[#f4f1ea] text-[#0a1915] focus:bg-white"
+                  )}
                   value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
 
-              {/* Category & Price */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-extrabold text-zinc-300 mb-2.5 pl-1">Menyu Bo'limi <span className="text-red-500">*</span></label>
+                  <label className={cn("mb-2.5 block pl-1 text-sm font-extrabold", isDark ? "text-zinc-300" : "text-[#0a1915]")}>
+                    Menyu bo&apos;limi <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <select
-                      className="w-full p-5 bg-[#1A1F1A] rounded-2xl border border-white/5 focus:bg-[#101010] focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10 transition-all outline-none appearance-none font-semibold text-white cursor-pointer text-lg"
+                      className={cn(
+                        "w-full cursor-pointer appearance-none rounded-2xl border p-5 text-lg font-semibold outline-none transition-all focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10",
+                        isDark
+                          ? "border-white/5 bg-[#1A1F1A] text-white focus:bg-[#101010]"
+                          : "border-[#0a2f26]/12 bg-[#f4f1ea] text-[#0a1915] focus:bg-white"
+                      )}
                       value={formData.category}
-                      onChange={e => setFormData({ ...formData, category: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     >
-                      {PREDEFINED_CATEGORIES.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
+                      {PREDEFINED_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
                       ))}
                     </select>
                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 font-bold">▼</div>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-extrabold text-zinc-300 mb-2.5 pl-1">Sotuv Narxi <span className="text-red-500">*</span></label>
+                  <label className={cn("mb-2.5 block pl-1 text-sm font-extrabold", isDark ? "text-zinc-300" : "text-[#0a1915]")}>
+                    Narx <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <input
                       placeholder="0"
                       type="number"
-                      className="w-full p-5 bg-[#1A1F1A] rounded-2xl border border-white/5 focus:bg-[#101010] focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10 transition-all outline-none font-extrabold text-[#D4AF37] text-xl pl-5 pr-20"
+                      className={cn(
+                        "w-full rounded-2xl border p-5 pl-5 pr-20 text-xl font-extrabold text-[#D4AF37] outline-none transition-all focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10",
+                        isDark ? "border-white/5 bg-[#1A1F1A] focus:bg-[#101010]" : "border-[#0a2f26]/12 bg-[#f4f1ea] focus:bg-white"
+                      )}
                       value={formData.price}
-                      onChange={e => setFormData({ ...formData, price: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       required
                     />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 font-extrabold bg-[#1A1A1A] px-3 py-1.5 rounded-xl text-xs uppercase tracking-wider border border-white/5">Uzs</span>
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 font-extrabold bg-[#1A1A1A] px-3 py-1.5 rounded-xl text-xs uppercase tracking-wider border border-white/5">so&apos;m</span>
                   </div>
                 </div>
               </div>
 
-              {/* Description */}
               <div>
-                <label className="block text-sm font-extrabold text-zinc-300 mb-2.5 pl-1">Tarkibi yoki Izoh <span className="text-zinc-500 font-normal">(ixtiyoriy)</span></label>
+                <label className={cn("mb-2.5 block pl-1 text-sm font-extrabold", isDark ? "text-zinc-300" : "text-[#0a1915]")}>
+                  Tarkib yoki izoh <span className="font-normal text-zinc-500">(ixtiyoriy)</span>
+                </label>
                 <textarea
-                  placeholder="Tarkibi: lazzatli guruch, go'sht, sabzi, maxsus ziravorlar va hk..."
-                  className="w-full p-5 bg-[#1A1F1A] rounded-2xl border border-white/5 focus:bg-[#101010] focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10 transition-all outline-none placeholder:text-zinc-600 font-medium min-h-[120px] resize-none text-base leading-relaxed"
+                  placeholder="Masalan: guruch, go'sht, ziravorlar..."
+                  className={cn(
+                    "min-h-[120px] w-full resize-none rounded-2xl border p-5 text-base font-medium leading-relaxed outline-none transition-all placeholder:text-zinc-500 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10",
+                    isDark
+                      ? "border-white/5 bg-[#1A1F1A] text-white focus:bg-[#101010]"
+                      : "border-[#0a2f26]/12 bg-[#f4f1ea] text-[#0a1915] focus:bg-white"
+                  )}
                   value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-4 pt-6 border-t border-white/5">
-                <Button type="button" variant="outline" className="flex-1 py-7 rounded-2xl border-white/5 text-zinc-400 font-extrabold hover:bg-[#1A1A1A] h-auto text-lg transition-colors hover:text-white" onClick={closeModal}>
+              <div className={cn("flex gap-4 border-t pt-6", isDark ? "border-white/5" : "border-[#0a2f26]/10")}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "h-auto flex-1 rounded-2xl py-7 text-lg font-extrabold transition-colors",
+                    isDark
+                      ? "border-white/10 text-zinc-400 hover:bg-[#1A1A1A] hover:text-white"
+                      : "border-[#0a2f26]/15 text-zinc-600 hover:bg-zinc-100"
+                  )}
+                  onClick={closeModal}
+                >
                   Bekor qilish
                 </Button>
-                <Button type="submit" className="flex- py-7 rounded-2xl bg-[#D4AF37] text-black font-extrabold hover:bg-white shadow-2xl shadow-[#D4AF37]/30 text-xl h-auto transition-all" isLoading={isSubmitting}>
-                  {isSubmitting ? "Saqlanmoqda..." : "Menyuga Qo'shish"}
+                <Button type="submit" className="h-auto flex-1 rounded-2xl bg-[#D4AF37] py-7 text-xl font-extrabold text-black shadow-2xl shadow-[#D4AF37]/30 transition-all hover:bg-white" isLoading={isSubmitting}>
+                  {isSubmitting ? "Saqlanmoqda..." : "Menyuga qo'shish"}
                 </Button>
               </div>
             </form>

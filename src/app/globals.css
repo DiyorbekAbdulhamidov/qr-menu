@@ -8,6 +8,16 @@
   }
 }
 
+/* QR menyu: mobil uchun yumshoq scroll va fokus */
+@layer utilities {
+  .safe-pb {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+}
+
 /* Hide scrollbar for category nav but keep functionality */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
