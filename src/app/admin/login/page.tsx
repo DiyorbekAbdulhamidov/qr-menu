@@ -15,7 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   // ... boshqa importlar
-  const SUPER_ADMIN_EMAIL = "admin@webleaders.uz"; // O'sha email
+  const SUPER_ADMIN_EMAIL = "admin@qr-menu-webleaders.uz"; // O'sha email
   // ... component ichida
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

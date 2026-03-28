@@ -10,7 +10,7 @@ import { toast } from "react-hot-toast";
 import { Trash2, ExternalLink, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
-const SUPER_ADMIN_EMAIL = "admin@webleaders.uz";
+const SUPER_ADMIN_EMAIL = "admin@qr-menu-webleaders.uz";
 
 export default function SuperAdminPage() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
