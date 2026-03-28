@@ -21,12 +21,14 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    const trimmedEmail = email.trim();
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, trimmedEmail, password);
       toast.success("Xush kelibsiz!");
 
       // MANTIQNI O'ZGARTIRAMIZ:
-      if (email === SUPER_ADMIN_EMAIL) {
+      if (trimmedEmail === SUPER_ADMIN_EMAIL) {
         router.push("/superadmin"); // Super adminni o'z paneliga
       } else {
         router.push("/admin/dashboard"); // Restoran egalarini o'z paneliga
@@ -34,7 +36,16 @@ export default function LoginPage() {
 
     } catch (error: any) {
       console.error(error);
-      toast.error("Login yoki parol xato!");
+      const code = error?.code as string | undefined;
+      if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
+        toast.error("Email yoki parol noto'g'ri, yoki bu akkaunt Firebase'da yo'q.");
+      } else if (code === "auth/invalid-email") {
+        toast.error("Email formati noto'g'ri.");
+      } else if (code === "auth/too-many-requests") {
+        toast.error("Juda ko'p urinish. Biroz kutib qayta urinib ko'ring.");
+      } else {
+        toast.error("Login yoki parol xato!");
+      }
     } finally {
       setIsLoading(false);
     }
