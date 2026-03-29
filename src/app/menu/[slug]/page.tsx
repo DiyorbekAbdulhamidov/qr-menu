@@ -14,6 +14,8 @@ import {
   UtensilsCrossed,
   ChefHat,
   Eye,
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import { ItemDetailModal } from "@/components/menu/ItemDetailModal";
 import { useAppTheme } from "@/lib/useAppTheme";
@@ -41,7 +43,7 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
         const r = restSnap.data();
         setRestaurant({
           id: slug,
-          name: (r.name as string) || "Restoran",
+          name: (r.name as string) || "Premium Restoran",
           ownerId: (r.ownerId as string) || "",
           logoUrl: r.logoUrl as string | undefined,
           themeColor: r.themeColor as string | undefined,
@@ -85,258 +87,201 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
 
   if (!restaurant) {
     return (
-      <div
-        className={cn(
-          "relative flex min-h-screen flex-col items-center justify-center px-6",
-          isDark ? "bg-[#050808] text-zinc-400" : "bg-[#f4f1ea] text-zinc-600"
-        )}
-      >
-        <ThemeToggle mode={mode} onCycle={cycleTheme} isDark={isDark} className="fixed right-4 z-50 top-[max(1rem,env(safe-area-inset-top))]" />
-        <div
-          className={cn(
-            "mb-6 rounded-full border p-8 shadow-2xl",
-            isDark ? "border-white/10 bg-[#0d1814]" : "border-[#0a2f26]/10 bg-white"
-          )}
-        >
-          <UtensilsCrossed size={56} className={isDark ? "text-zinc-500" : "text-zinc-400"} strokeWidth={1} />
+      <div className={cn("relative flex min-h-screen flex-col items-center justify-center px-6", isDark ? "bg-[#050505] text-zinc-400" : "bg-[#FAF9F6] text-zinc-600")}>
+        <ThemeToggle mode={mode} onCycle={cycleTheme} isDark={isDark} className="fixed right-6 z-50 top-6" />
+        <div className={cn("mb-6 rounded-full border p-8 shadow-2xl", isDark ? "border-white/10 bg-[#111]" : "border-black/5 bg-white")}>
+          <UtensilsCrossed size={56} className="text-[#D4AF37]" strokeWidth={1} />
         </div>
-        <h2
-          className={cn("mb-2 text-3xl font-bold tracking-tight", isDark ? "text-white" : "text-[#0a1915]")}
-          style={{ fontFamily: "var(--font-playfair)" }}
-        >
+        <h2 className={cn("mb-2 text-3xl font-light tracking-tight", isDark ? "text-white" : "text-black")} style={{ fontFamily: "var(--font-playfair)" }}>
           Menyu topilmadi
         </h2>
-        <p className="font-medium">Bunday restoran mavjud emas.</p>
+        <p className="font-medium text-sm uppercase tracking-widest text-zinc-500">Bunday manzil mavjud emas</p>
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "touch-manipulation min-h-screen pb-28 font-[family-name:var(--font-dm-sans)] selection:bg-[#D4AF37]/40 selection:text-inherit safe-pb",
-        isDark
-          ? "bg-[#050808] text-zinc-100"
-          : "bg-[#f4f1ea] text-[#0a1915]"
-      )}
-    >
+    <div className={cn(
+      "touch-manipulation min-h-screen pb-32 font-sans selection:bg-[#D4AF37]/40 selection:text-inherit relative overflow-hidden",
+      isDark ? "bg-[#050505] text-zinc-100" : "bg-[#FAF9F6] text-[#0a1915]"
+    )}>
       <ThemeToggle mode={mode} onCycle={cycleTheme} isDark={isDark} className="fixed right-4 z-50 top-[max(1rem,env(safe-area-inset-top))]" />
 
-      {/* Hero */}
-      <div
-        className={cn(
-          "relative h-[32vh] min-h-[220px] overflow-hidden rounded-b-[2rem] shadow-2xl sm:h-[38vh] sm:rounded-b-[3rem] md:h-[42vh]",
-          isDark ? "shadow-black/40" : "shadow-[#0a2f26]/10"
-        )}
-      >
+      {/* AMBIENT BACKGROUND GLOW (Luxury light scattering) */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className={cn("absolute top-[-10%] left-[-10%] w-[60%] h-[40%] rounded-full blur-[150px] opacity-20", isDark ? "bg-[#D4AF37]/20" : "bg-[#D4AF37]/10")} />
+        <div className={cn("absolute bottom-[-10%] right-[-10%] w-[50%] h-[40%] rounded-full blur-[120px] opacity-20", isDark ? "bg-white/5" : "bg-[#0a2f26]/5")} />
+      </div>
+
+      {/* CINEMATIC HERO */}
+      <div className={cn(
+        "relative h-[38vh] min-h-[280px] overflow-hidden rounded-b-[2.5rem] shadow-2xl sm:h-[45vh] sm:rounded-b-[3.5rem] md:h-[50vh]",
+        isDark ? "shadow-black/60" : "shadow-[#D4AF37]/10"
+      )}>
+        <div className={cn(
+          "absolute inset-0 z-10",
+          isDark ? "bg-gradient-to-t from-[#050505] via-[#050505]/70 to-transparent" : "bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6]/60 to-black/10"
+        )} />
         <div
-          className={cn(
-            "absolute inset-0 z-10",
-            isDark
-              ? "bg-gradient-to-t from-[#050808] via-[#050808]/65 to-transparent"
-              : "bg-gradient-to-t from-[#f4f1ea] via-[#f4f1ea]/50 to-transparent"
-          )}
-        />
-        <div
-          className={cn(
-            "absolute inset-0 transition-transform duration-[3s] ease-out",
-            isDark ? "opacity-55" : "opacity-85"
-          )}
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1920&auto=format&fit=crop')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
+          className={cn("absolute inset-0 animate-[cinematic-zoom_30s_infinite_alternate]", isDark ? "opacity-60" : "opacity-90")}
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1920&auto=format&fit=crop')", backgroundSize: "cover", backgroundPosition: "center" }}
         />
 
-        <div className="relative z-20 mx-auto flex h-full max-w-7xl flex-col justify-end px-5 pb-8 sm:px-8 lg:px-10">
-          <div className="mb-3 flex flex-wrap items-center gap-3">
+        <div className="relative z-20 mx-auto flex h-full max-w-7xl flex-col justify-end px-5 pb-10 sm:px-8 lg:px-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out">
+          <div className="mb-4 flex flex-wrap items-center gap-4">
             {restaurant.logoUrl ? (
-              <div className="relative h-14 w-14 overflow-hidden rounded-2xl border border-[#D4AF37]/35 bg-black/20 sm:h-16 sm:w-16">
-                <Image src={restaurant.logoUrl} alt="" fill className="object-cover" sizes="64px" />
+              <div className="relative h-16 w-16 overflow-hidden rounded-[1.2rem] border border-[#D4AF37]/40 bg-black/40 shadow-xl backdrop-blur-md">
+                <Image src={restaurant.logoUrl} alt="Logo" fill className="object-cover" sizes="64px" />
               </div>
-            ) : null}
-            <span className="rounded-sm border border-[#D4AF37]/45 bg-[#D4AF37]/12 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#D4AF37] backdrop-blur-md">
-              {(restaurant.name.split(/\s+/)[0] || "Restoran").toUpperCase()} Signature
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-[1.2rem] border border-[#D4AF37]/40 bg-black/40 shadow-xl backdrop-blur-md">
+                <Sparkles className="text-[#D4AF37]" size={24} />
+              </div>
+            )}
+            <span className="rounded-full border border-[#D4AF37]/30 bg-[#111]/60 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37] backdrop-blur-xl shadow-lg">
+              Signature Collection
             </span>
           </div>
-          <h1
-            className={cn(
-              "mb-3 max-w-4xl text-4xl font-bold leading-[1.05] tracking-tight drop-shadow-lg sm:text-5xl md:text-6xl",
-              isDark ? "text-white" : "text-[#0a1915]"
-            )}
-            style={{ fontFamily: "var(--font-playfair)" }}
-          >
+
+          <h1 className={cn(
+            "mb-3 max-w-4xl text-5xl font-extrabold leading-[1.05] tracking-tighter drop-shadow-2xl sm:text-6xl md:text-7xl",
+            isDark ? "text-white" : "text-[#0a1915]"
+          )} style={{ fontFamily: "var(--font-playfair)" }}>
             {restaurant.name}
           </h1>
-          <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-            <span className="flex items-center gap-1.5">
-              <Star size={16} className="fill-[#D4AF37] text-[#D4AF37]" /> 4.9{" "}
-              <span className={isDark ? "text-zinc-500" : "text-zinc-500"}>/ 5.0</span>
+
+          <div className="flex flex-wrap items-center gap-3 text-sm font-semibold">
+            <span className={cn(
+              "flex items-center gap-2 rounded-2xl border px-4 py-2.5 backdrop-blur-xl shadow-lg",
+              isDark ? "border-white/10 bg-white/5 text-white" : "border-[#0a2f26]/10 bg-white/80 text-[#0a1915]"
+            )}>
+              <Star size={16} className="fill-[#D4AF37] text-[#D4AF37]" />
+              5.0 <span className="text-zinc-500 opacity-60 font-light px-1">|</span> Premium
             </span>
-            <span
-              className={cn(
-                "flex items-center gap-1.5 rounded-2xl border px-3 py-2 backdrop-blur-xl",
-                isDark ? "border-white/10 bg-white/5" : "border-[#0a2f26]/10 bg-white/80"
-              )}
-            >
+            <span className={cn(
+              "flex items-center gap-2 rounded-2xl border px-4 py-2.5 backdrop-blur-xl shadow-lg",
+              isDark ? "border-white/10 bg-white/5 text-white" : "border-[#0a2f26]/10 bg-white/80 text-[#0a1915]"
+            )}>
               <ChefHat size={16} className="text-[#D4AF37]" /> Milliy & Yevropa
             </span>
           </div>
         </div>
       </div>
 
-      {/* Categories */}
-      <div
-        className={cn(
-          "sticky top-0 z-40 border-b pt-3 pb-3 backdrop-blur-2xl transition-colors",
-          isDark ? "border-white/[0.06] bg-[#050808]/75" : "border-[#0a2f26]/8 bg-[#f4f1ea]/85"
-        )}
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <nav className="no-scrollbar flex snap-x items-center gap-2 overflow-x-auto pb-0.5">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setActiveCategory(cat)}
-                className={cn(
-                  "snap-start flex-shrink-0 whitespace-nowrap rounded-full border px-5 py-2.5 text-[15px] font-semibold transition-all duration-300",
-                  activeCategory === cat
-                    ? "scale-[1.02] border-[#D4AF37] bg-[#D4AF37] text-black shadow-lg shadow-[#D4AF37]/25"
-                    : isDark
-                      ? "border-white/8 bg-[#0d1814] text-zinc-300 hover:border-[#D4AF37]/25 hover:text-white"
-                      : "border-[#0a2f26]/12 bg-white text-[#0a1915] hover:border-[#D4AF37]/35"
-                )}
-              >
-                {cat}
-              </button>
-            ))}
-          </nav>
-        </div>
+      {/* FLOATING GLASS NAVIGATION */}
+      <div className={cn(
+        "sticky top-4 z-40 mx-4 mt-6 rounded-[2rem] border px-2 py-2 shadow-2xl backdrop-blur-[40px] transition-all duration-500 sm:mx-auto sm:max-w-max",
+        isDark ? "bg-white/[0.03] border-white/10 shadow-black/50" : "bg-white/70 border-white shadow-[#D4AF37]/10"
+      )}>
+        <nav className="no-scrollbar flex snap-x items-center gap-2 overflow-x-auto">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setActiveCategory(cat)}
+              className={cn(
+                "snap-center flex-shrink-0 whitespace-nowrap rounded-[1.5rem] px-6 py-3 text-[13px] font-bold uppercase tracking-wider transition-all duration-500",
+                activeCategory === cat
+                  ? "bg-gradient-to-r from-[#D4AF37] to-[#B38F24] text-black shadow-[0_10px_20px_rgba(212,175,55,0.3)] scale-[1.02]"
+                  : isDark
+                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-600 hover:bg-black/5 hover:text-black"
+              )}
+            >
+              {cat}
+            </button>
+          ))}
+        </nav>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+      {/* MENU LIST (Premium Card Layout) */}
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+
         {menuItems.length === 0 && !loading && (
-          <div
-            className={cn(
-              "flex flex-col items-center justify-center rounded-[2rem] border py-24 text-center shadow-xl",
-              isDark ? "border-white/8 bg-[#0d1814]" : "border-[#0a2f26]/10 bg-white"
-            )}
-          >
-            <div
-              className={cn("mb-6 rounded-full border p-6", isDark ? "border-white/8 bg-[#0a1512]" : "border-[#0a2f26]/10")}
-            >
-              <ChefHat size={48} className="text-zinc-400" strokeWidth={1} />
+          <div className="flex flex-col items-center justify-center rounded-[3rem] py-24 text-center animate-in fade-in duration-1000">
+            <div className={cn("mb-6 rounded-full border p-8 shadow-2xl", isDark ? "border-white/5 bg-[#111]" : "border-black/5 bg-white")}>
+              <ChefHat size={48} className="text-[#D4AF37]" strokeWidth={1} />
             </div>
-            <p
-              className="mb-2 text-2xl font-bold tracking-tight"
-              style={{ fontFamily: "var(--font-playfair)" }}
-            >
-              Menyu tayyorlanmoqda
-            </p>
-            <p className={isDark ? "text-zinc-500" : "text-zinc-600"}>
-              Oshpazlarimiz tez orada eng sara taomlarni taqdim etishadi.
-            </p>
+            <p className="mb-2 text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-playfair)" }}>Tayyorgarlik jarayonida</p>
+            <p className="text-sm font-medium uppercase tracking-widest text-zinc-500">Oshpazlarimiz tez orada taomlarni taqdim etadi</p>
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredItems.map((item) => (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredItems.map((item, index) => (
             <button
               key={item.id}
               type="button"
               disabled={!item.isAvailable}
               onClick={() => item.isAvailable && setSelectedItem(item)}
               className={cn(
-                "group relative flex w-full flex-row gap-3 overflow-hidden rounded-[1.5rem] border p-3 text-left transition-all duration-300 sm:gap-4",
-                "min-h-[120px] active:scale-[0.99] sm:min-h-[128px]",
-                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]",
+                "group relative flex w-full flex-row gap-4 overflow-hidden rounded-[2rem] border p-3.5 text-left transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl animate-in fade-in slide-in-from-bottom-8",
+                "min-h-[140px] active:scale-[0.98]",
                 isDark
-                  ? "border-white/[0.06] bg-[#0d1814] hover:border-[#D4AF37]/30 hover:shadow-xl hover:shadow-[#D4AF37]/8"
-                  : "border-[#0a2f26]/10 bg-white hover:border-[#D4AF37]/35 hover:shadow-lg",
-                !item.isAvailable && "pointer-events-none opacity-55 grayscale"
+                  ? "bg-white/[0.02] border-white/5 hover:border-[#D4AF37]/40 hover:bg-white/[0.04] hover:shadow-[#D4AF37]/10"
+                  : "bg-white border-[#0a2f26]/5 hover:border-[#D4AF37]/40 hover:shadow-[#D4AF37]/10",
+                !item.isAvailable && "pointer-events-none opacity-60 grayscale-[50%]"
               )}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              <div
-                className={cn(
-                  "relative h-[104px] w-[104px] flex-shrink-0 overflow-hidden rounded-[1.1rem] border sm:h-[118px] sm:w-[118px]",
-                  isDark ? "border-white/8 bg-[#0a1512]" : "border-[#0a2f26]/8 bg-[#e8e4dc]"
-                )}
-              >
+              {/* Luxury Image Container */}
+              <div className={cn(
+                "relative h-[116px] w-[116px] flex-shrink-0 overflow-hidden rounded-[1.2rem] border shadow-inner sm:h-[130px] sm:w-[130px]",
+                isDark ? "border-white/10 bg-[#111]" : "border-black/5 bg-zinc-100"
+              )}>
                 {item.imageUrl ? (
-                  <Image
-                    src={item.imageUrl}
-                    alt=""
-                    fill
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                    sizes="(max-width: 640px) 120px, 140px"
-                  />
+                  <Image src={item.imageUrl} alt={item.name} fill className="object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-110" sizes="(max-width: 640px) 130px, 150px" />
                 ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center text-[#D4AF37]/45">
-                    <ImageIcon size={28} strokeWidth={1} />
+                  <div className="flex h-full w-full items-center justify-center text-[#D4AF37]/40">
+                    <ImageIcon size={32} strokeWidth={1} />
                   </div>
                 )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
                 {!item.isAvailable && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                    <span className="rounded-md bg-[#D4AF37] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-black">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <span className="rounded-md bg-[#D4AF37] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-black shadow-xl">
                       Tugagan
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5 pr-1">
+              {/* Card Content Area */}
+              <div className="flex min-w-0 flex-1 flex-col justify-between py-1 pr-1">
                 <div className="min-w-0">
-                  <h3
-                    className={cn(
-                      "mb-1 line-clamp-2 text-[16px] font-bold leading-snug tracking-tight transition-colors sm:text-[17px]",
-                      isDark ? "text-white group-hover:text-[#e8d5a3]" : "text-[#0a1915] group-hover:text-[#0a2f26]"
-                    )}
-                    style={{ fontFamily: "var(--font-playfair)" }}
-                  >
+                  <h3 className={cn(
+                    "mb-1.5 line-clamp-2 text-lg font-bold leading-snug tracking-tight transition-colors sm:text-xl",
+                    isDark ? "text-white group-hover:text-[#D4AF37]" : "text-[#0a1915] group-hover:text-[#B38F24]"
+                  )} style={{ fontFamily: "var(--font-playfair)" }}>
                     {item.name}
                   </h3>
-                  <p
-                    className={cn(
-                      "line-clamp-2 text-[13px] leading-relaxed",
-                      isDark ? "text-zinc-400" : "text-zinc-600"
-                    )}
-                  >
-                    {item.description}
+                  <p className={cn(
+                    "line-clamp-2 text-[13px] leading-relaxed font-light",
+                    isDark ? "text-zinc-400" : "text-zinc-500"
+                  )}>
+                    {item.description || "Taom haqida to'liq ma'lumotni ko'rish uchun ustiga bosing."}
                   </p>
                 </div>
 
-                <div className="mt-2 flex items-end justify-between gap-2">
-                  <span
-                    className={cn(
-                      "text-lg font-bold tabular-nums",
-                      isDark ? "text-[#e8d5a3]" : "text-[#0a2f26]"
-                    )}
-                  >
+                <div className="mt-3 flex items-end justify-between gap-2">
+                  <span className={cn(
+                    "text-xl font-bold tabular-nums tracking-tight",
+                    isDark ? "text-[#D4AF37]" : "text-[#B38F24]"
+                  )}>
                     {Number(item.price).toLocaleString()}
-                    <span
-                      className={cn(
-                        "ml-1 text-[10px] font-bold uppercase tracking-widest",
-                        isDark ? "text-zinc-500" : "text-zinc-500"
-                      )}
-                    >
-                      so&apos;m
-                    </span>
+                    <span className="ml-1 text-[10px] uppercase tracking-widest opacity-70">UZS</span>
                   </span>
+
                   {item.isAvailable && (
-                    <span
-                      className={cn(
-                        "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
-                        isDark
-                          ? "border-[#D4AF37]/35 bg-[#0a1512] text-[#D4AF37] group-hover:bg-[#D4AF37]/15"
-                          : "border-[#D4AF37]/40 bg-[#f4f1ea] text-[#0a2f26] group-hover:bg-[#D4AF37]/15"
-                      )}
-                      aria-hidden
-                    >
-                      <Eye size={18} strokeWidth={2.2} />
-                    </span>
+                    <div className={cn(
+                      "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border transition-all duration-300",
+                      isDark
+                        ? "border-white/10 bg-white/5 text-zinc-400 group-hover:bg-[#D4AF37] group-hover:border-[#D4AF37] group-hover:text-black"
+                        : "border-black/5 bg-black/5 text-zinc-500 group-hover:bg-[#D4AF37] group-hover:border-[#D4AF37] group-hover:text-black"
+                    )}>
+                      <ChevronRight size={16} strokeWidth={2.5} className="transition-transform group-hover:translate-x-0.5" />
+                    </div>
                   )}
                 </div>
               </div>
@@ -345,67 +290,63 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
         </div>
 
         {filteredItems.length === 0 && menuItems.length > 0 && (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div
-              className={cn("mb-6 rounded-full border p-6", isDark ? "border-white/8 bg-[#0d1814]" : "border-[#0a2f26]/10 bg-white")}
-            >
-              <Search size={40} className="text-zinc-400" strokeWidth={1.5} />
+          <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-500">
+            <div className={cn("mb-6 rounded-full border p-6", isDark ? "border-white/5 bg-[#111]" : "border-black/5 bg-white")}>
+              <Search size={32} className="text-zinc-500" strokeWidth={1.5} />
             </div>
-            <p className="mb-2 text-2xl font-bold tracking-tight" style={{ fontFamily: "var(--font-playfair)" }}>
-              Taomlar topilmadi
-            </p>
-            <p className={cn("mb-8 font-medium", isDark ? "text-zinc-500" : "text-zinc-600")}>
-              Bu bo‘limda hozircha taomlar yo‘q
-            </p>
+            <p className="mb-2 text-2xl font-light tracking-tight">Kategoriya bo'sh</p>
             <button
               type="button"
               onClick={() => setActiveCategory("Barchasi")}
-              className="rounded-full bg-[#D4AF37] px-8 py-3.5 text-sm font-bold uppercase tracking-wide text-black shadow-xl shadow-[#D4AF37]/20 transition-transform active:scale-95"
+              className="mt-6 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B38F24] px-8 py-3.5 text-xs font-bold uppercase tracking-widest text-black shadow-xl shadow-[#D4AF37]/20 transition-transform active:scale-95"
             >
-              Barcha menyu
+              Barcha menyuni ko'rish
             </button>
           </div>
         )}
       </main>
 
       <ItemDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} isDark={isDark} />
+
+      {/* GLOBAL STYLES FOR CINEMATIC ANIMATIONS */}
+      <style jsx global>{`
+        @keyframes cinematic-zoom {
+          0% { transform: scale(1) translate(0, 0); }
+          100% { transform: scale(1.15) translate(1%, 2%); }
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }
 
+// PREMIUM SKELETON (LOADER)
 function MenuSkeleton({ isDark }: { isDark: boolean }) {
   return (
-    <div className={cn("min-h-screen font-[family-name:var(--font-dm-sans)]", isDark ? "bg-[#050808]" : "bg-[#f4f1ea]")}>
-      <div
-        className={cn(
-          "h-[32vh] min-h-[220px] animate-pulse rounded-b-[2rem] sm:h-[38vh] sm:rounded-b-[3rem]",
-          isDark ? "bg-[#0d1814]" : "bg-[#e8e4dc]"
-        )}
-      />
-      <div className={cn("sticky top-0 border-b px-4 py-3 backdrop-blur-xl", isDark ? "border-white/8 bg-[#050808]/80" : "border-[#0a2f26]/10 bg-[#f4f1ea]/90")}>
-        <div className="mx-auto flex max-w-7xl gap-2 overflow-hidden">
-          {Array.from({ length: 5 }, (_, i) => (
-            <Skeleton key={i} className={cn("h-10 w-24 flex-shrink-0 rounded-full", isDark ? "bg-zinc-800" : "bg-zinc-300/80")} />
+    <div className={cn("min-h-screen", isDark ? "bg-[#050505]" : "bg-[#FAF9F6]")}>
+      <div className={cn("h-[38vh] min-h-[280px] animate-pulse rounded-b-[2.5rem] sm:h-[45vh] sm:rounded-b-[3.5rem]", isDark ? "bg-[#111]" : "bg-[#E5E5E5]")} />
+
+      <div className="sticky top-4 z-40 mx-4 mt-6 sm:mx-auto sm:max-w-max">
+        <div className="flex gap-3 overflow-hidden rounded-[2rem] p-2">
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={i} className={cn("h-12 w-28 rounded-full", isDark ? "bg-white/10" : "bg-black/10")} />
           ))}
         </div>
       </div>
-      <div className="mx-auto max-w-7xl px-4 pb-20 pt-8">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-10">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }, (_, i) => (
-            <div
-              key={i}
-              className={cn(
-                "flex h-[128px] flex-row gap-3 rounded-[1.5rem] border p-3",
-                isDark ? "border-white/8 bg-[#0d1814]" : "border-[#0a2f26]/10 bg-white"
-              )}
-            >
-              <Skeleton className={cn("h-[104px] w-[104px] flex-shrink-0 rounded-[1.1rem] sm:h-[118px] sm:w-[118px]", isDark ? "bg-zinc-800" : "bg-zinc-200")} />
+            <div key={i} className={cn("flex h-[140px] flex-row gap-4 rounded-[2rem] border p-3.5", isDark ? "border-white/5 bg-[#0A0A0A]" : "border-black/5 bg-white")}>
+              <Skeleton className={cn("h-[116px] w-[116px] flex-shrink-0 rounded-[1.2rem] sm:h-[130px] sm:w-[130px]", isDark ? "bg-[#1A1A1A]" : "bg-zinc-200")} />
               <div className="flex flex-1 flex-col justify-center gap-2 pr-1">
-                <Skeleton className={cn("h-4 w-[85%] rounded-md", isDark ? "bg-zinc-800" : "bg-zinc-200")} />
-                <Skeleton className={cn("h-3 w-full rounded-sm", isDark ? "bg-zinc-800" : "bg-zinc-200")} />
-                <div className="mt-auto flex justify-between">
-                  <Skeleton className={cn("h-5 w-20 rounded-md", isDark ? "bg-zinc-800" : "bg-zinc-200")} />
-                  <Skeleton className={cn("h-10 w-10 rounded-full", isDark ? "bg-zinc-800" : "bg-zinc-200")} />
+                <Skeleton className={cn("h-5 w-[85%] rounded-md", isDark ? "bg-white/10" : "bg-black/10")} />
+                <Skeleton className={cn("h-3 w-full rounded-sm", isDark ? "bg-white/5" : "bg-black/5")} />
+                <Skeleton className={cn("h-3 w-2/3 rounded-sm", isDark ? "bg-white/5" : "bg-black/5")} />
+                <div className="mt-auto flex justify-between items-end">
+                  <Skeleton className={cn("h-6 w-20 rounded-md", isDark ? "bg-white/10" : "bg-black/10")} />
+                  <Skeleton className={cn("h-9 w-9 rounded-full", isDark ? "bg-white/10" : "bg-black/10")} />
                 </div>
               </div>
             </div>

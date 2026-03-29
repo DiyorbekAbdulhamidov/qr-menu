@@ -8,25 +8,17 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
 import { Button } from "@/components/ui/Button";
 import { MenuItem } from "@/lib/types";
-import { Plus, Trash2, Eye, EyeOff, Download, ImagePlus, UtensilsCrossed, LogOut, LayoutDashboard, QrCode, Search, Tag, X, ChefHat } from "lucide-react";
+import { Plus, Trash2, Eye, EyeOff, Download, ImagePlus, LogOut, QrCode, Search, Tag, X, ChefHat, Sparkles, MoveRight } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import QRCode from "react-qr-code";
 import { useAppTheme } from "@/lib/useAppTheme";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/lib/utils";
 
-// Tayyor kategoriyalar (Ularga moslashtirilgan)
 const PREDEFINED_CATEGORIES = [
-  "Milliy taomlar",
-  "Yevropa taomlari",
-  "Kaboblar (Shashlik)",
-  "Suyuq taomlar",
-  "Salatlar va Gazaklar",
-  "Fast Food",
-  "Shirinliklar",
-  "Yaxna ichimliklar",
-  "Choy va Qahva",
-  "Qo'shimchalar"
+  "Milliy taomlar", "Yevropa taomlari", "Kaboblar (Shashlik)", "Suyuq taomlar",
+  "Salatlar va Gazaklar", "Fast Food", "Shirinliklar", "Yaxna ichimliklar",
+  "Choy va Qahva", "Qo'shimchalar"
 ];
 
 export default function AdminDashboard() {
@@ -37,16 +29,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [baseUrl, setBaseUrl] = useState<string>("");
-
-  // Premium rebranding - Haqiqiy nomi
   const [restaurantName, setRestaurantName] = useState("");
 
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    category: "Milliy taomlar",
-    image: null as File | null,
+    name: "", description: "", price: "", category: "Milliy taomlar", image: null as File | null,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,8 +55,7 @@ export default function AdminDashboard() {
         if (!querySnapshot.empty) {
           const restDoc = querySnapshot.docs[0];
           const rd = restDoc.data() as { name?: string };
-          setRestaurantName(typeof rd.name === "string" && rd.name.trim() ? rd.name : "Restoran");
-
+          setRestaurantName(typeof rd.name === "string" && rd.name.trim() ? rd.name : "Premium Restoran");
           setRestaurantSlug(restDoc.id);
           fetchItems(restDoc.id);
         } else {
@@ -78,7 +63,6 @@ export default function AdminDashboard() {
           toast.error("Hisobingizga biriktirilgan restoran topilmadi.");
         }
       } catch (error) {
-        console.error(error);
         setLoading(false);
       }
     });
@@ -92,7 +76,6 @@ export default function AdminDashboard() {
       const snapshot = await getDocs(q);
       setItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItem)));
     } catch (error) {
-      console.error(error);
       toast.error("Menyuni yuklashda xatolik");
     } finally {
       setLoading(false);
@@ -125,21 +108,15 @@ export default function AdminDashboard() {
       }
 
       await addDoc(collection(db, "restaurants", restaurantSlug, "menuItems"), {
-        name: formData.name,
-        description: formData.description,
-        price: Number(formData.price),
-        category: formData.category,
-        imageUrl,
-        isAvailable: true,
-        createdAt: Date.now(),
+        name: formData.name, description: formData.description, price: Number(formData.price),
+        category: formData.category, imageUrl, isAvailable: true, createdAt: Date.now(),
       });
 
-      toast.success("Taom muvaffaqiyatli qo'shildi!");
+      toast.success("Shedevr muvaffaqiyatli qo'shildi!", { style: { background: '#D4AF37', color: '#000' } });
       closeModal();
       fetchItems(restaurantSlug);
     } catch (error) {
-      console.error(error);
-      toast.error("Xatolik yuz berdi. Internetni tekshiring.");
+      toast.error("Xatolik yuz berdi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -154,12 +131,9 @@ export default function AdminDashboard() {
   const toggleAvailability = async (id: string, currentStatus: boolean) => {
     try {
       setItems(items.map(item => item.id === id ? { ...item, isAvailable: !currentStatus } : item));
-      await updateDoc(doc(db, "restaurants", restaurantSlug, "menuItems", id), {
-        isAvailable: !currentStatus
-      });
-      toast.success(currentStatus ? "Taom vaqtincha yashirildi" : "Taom yana menyuda!");
+      await updateDoc(doc(db, "restaurants", restaurantSlug, "menuItems", id), { isAvailable: !currentStatus });
+      toast.success(currentStatus ? "Vaqtincha yashirildi" : "Menyuga qaytarildi");
     } catch (e) {
-      toast.error("Statusni o'zgartirib bo'lmadi");
       fetchItems(restaurantSlug);
     }
   };
@@ -169,9 +143,8 @@ export default function AdminDashboard() {
     try {
       setItems(items.filter(item => item.id !== id));
       await deleteDoc(doc(db, "restaurants", restaurantSlug, "menuItems", id));
-      toast.success("Taom o'chirildi");
+      toast.success("O'chirildi");
     } catch (e) {
-      toast.error("O'chirishda xatolik");
       fetchItems(restaurantSlug);
     }
   };
@@ -182,15 +155,8 @@ export default function AdminDashboard() {
   }
 
   const downloadQR = () => {
-    if (!baseUrl || !restaurantSlug) {
-      toast.error("QR tayyor emas — sahifani yangilab qayta urinib ko‘ring.");
-      return;
-    }
     const svg = document.getElementById("qr-code-svg");
-    if (!svg) {
-      toast.error("QR topilmadi.");
-      return;
-    }
+    if (!svg) return;
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -199,252 +165,146 @@ export default function AdminDashboard() {
     const url = URL.createObjectURL(blob);
 
     img.onload = () => {
-      canvas.width = 1200;
-      canvas.height = 1200;
-      if (ctx) {
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, 1200, 1200);
-      }
-      try {
-        const pngUrl = canvas.toDataURL("image/png");
-        const downloadLink = document.createElement("a");
-        downloadLink.href = pngUrl;
-        downloadLink.download = `${restaurantSlug}-qr-menu.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        URL.revokeObjectURL(url);
-        toast.success("PNG yuklandi");
-      } catch {
-        toast.error("Rasmni yaratib bo‘lmadi.");
-        URL.revokeObjectURL(url);
-      }
-    };
-    img.onerror = () => {
+      canvas.width = 1200; canvas.height = 1200;
+      if (ctx) { ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, 1200, 1200); }
+      const pngUrl = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl; downloadLink.download = `${restaurantSlug}-qr.png`;
+      document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink);
       URL.revokeObjectURL(url);
-      toast.error("QR rasmga aylantirilmadi.");
     };
     img.src = url;
   };
 
+  // --- LOADER ---
   if (loading) return (
-    <div
-      className={cn(
-        "flex h-screen flex-col items-center justify-center",
-        isDark ? "bg-[#080808]" : "bg-[#f4f1ea]"
-      )}
-    >
-      <div className="relative flex h-20 w-20 items-center justify-center">
-        <div
-          className={cn(
-            "absolute inset-0 animate-pulse rounded-full border-8",
-            isDark ? "border-[#0D1C0D]" : "border-[#e8e4dc]"
-          )}
-        />
-        <div className="absolute inset-0 animate-spin rounded-full border-8 border-[#D4AF37] border-t-transparent" />
-        <UtensilsCrossed className="relative h-8 w-8 animate-pulse text-[#D4AF37]" strokeWidth={1.5} />
+    <div className="flex h-screen flex-col items-center justify-center bg-[#030303]">
+      <div className="relative flex h-24 w-24 items-center justify-center">
+        <div className="absolute inset-0 animate-[spin_3s_linear_infinite] rounded-full border-[1px] border-white/10 border-t-[#D4AF37]" />
+        <div className="absolute inset-2 animate-[spin_2s_linear_infinite_reverse] rounded-full border-[1px] border-white/5 border-b-[#D4AF37]" />
+        <ChefHat className="h-8 w-8 text-[#D4AF37] animate-pulse" strokeWidth={1} />
       </div>
-      <p className={cn("mt-6 text-lg font-semibold tracking-wide", isDark ? "text-zinc-400" : "text-zinc-600")}>
-        Panel yuklanmoqda...
-      </p>
+      <p className="mt-8 text-xs font-medium uppercase tracking-[0.3em] text-[#D4AF37]/70">Tizimga ulanmoqda</p>
     </div>
   );
 
   return (
-    <div
-      className={cn(
-        "min-h-screen p-4 font-sans selection:bg-[#D4AF37] md:p-8",
-        isDark ? "bg-[#080808] text-white selection:text-white" : "bg-[#f4f1ea] text-[#0a1915] selection:text-[#0a1915]"
-      )}
-    >
-      <Toaster
-        position="top-center"
-        reverseOrder={false}
-        toastOptions={{
-          style: isDark
-            ? {
-                borderRadius: "1.25rem",
-                background: "#1A1A1A",
-                color: "#D4AF37",
-                padding: "1rem",
-                border: "1px solid rgba(255,255,255,0.05)",
-                fontWeight: 600,
-              }
-            : {
-                borderRadius: "1.25rem",
-                background: "#ffffff",
-                color: "#0a2f26",
-                padding: "1rem",
-                border: "1px solid rgba(10,47,38,0.12)",
-                fontWeight: 600,
-              },
-        }}
-      />
+    <div className={cn(
+      "min-h-screen font-sans selection:bg-[#D4AF37] selection:text-black relative overflow-hidden pb-20",
+      isDark ? "bg-[#030303] text-white" : "bg-[#F9F8F6] text-[#111]"
+    )}>
 
-      <ThemeToggle mode={mode} onCycle={cycleTheme} isDark={isDark} className="fixed right-4 z-50 top-[max(1rem,env(safe-area-inset-top))]" />
+      {/* AMBIENT BACKGROUND GLOWS */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className={cn("absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[150px] opacity-30", isDark ? "bg-[#D4AF37]/20" : "bg-[#D4AF37]/10")} />
+        <div className={cn("absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[150px] opacity-20", isDark ? "bg-white/10" : "bg-black/5")} />
+      </div>
 
-      <div className="mx-auto max-w-7xl pt-14">
-        {/* HEADER */}
-        <header
-          className={cn(
-            "mb-10 flex flex-col items-start justify-between gap-6 rounded-[2.5rem] border p-7 shadow-2xl md:flex-row md:items-center",
-            isDark ? "border-white/5 bg-[#101010] shadow-black/10" : "border-[#0a2f26]/10 bg-white shadow-[#0a2f26]/5"
-          )}
-        >
+      <Toaster position="top-center" toastOptions={{ style: { background: isDark ? '#111' : '#fff', color: isDark ? '#fff' : '#000', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '16px' } }} />
+      <ThemeToggle mode={mode} onCycle={cycleTheme} isDark={isDark} className="fixed right-6 z-50 top-6" />
+
+      <div className="relative z-10 mx-auto max-w-[1400px] px-6 pt-20">
+
+        {/* ULTRA-PREMIUM HEADER */}
+        <header className={cn(
+          "mb-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 rounded-[2rem] p-8 backdrop-blur-2xl border transition-all duration-500",
+          isDark ? "bg-white/[0.02] border-white/5 shadow-[0_30px_60px_rgba(0,0,0,0.5)]" : "bg-white/60 border-black/5 shadow-[0_30px_60px_rgba(0,0,0,0.05)]"
+        )}>
           <div className="flex items-center gap-6">
-            <div className="rounded-3xl border border-[#D4AF37]/30 bg-[#1A2F1A] p-5 text-[#D4AF37] shadow-lg">
-              <LayoutDashboard size={32} strokeWidth={1} />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#8A6D1C] shadow-[0_0_30px_rgba(212,175,55,0.3)]">
+              <Sparkles size={28} className="text-black" strokeWidth={1.5} />
             </div>
             <div>
-              <h1 className={cn("text-4xl font-extrabold tracking-tighter", isDark ? "text-white" : "text-[#0a1915]")}>
-                Boshqaruv
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37] mb-1">Eksklyuziv Boshqaruv</p>
+              <h1 className="text-3xl md:text-4xl font-light tracking-tight">
+                <span className="font-bold">{restaurantName}</span>
               </h1>
-              <p className={cn("mt-1 flex flex-wrap items-center gap-3 text-base font-medium", isDark ? "text-zinc-400" : "text-zinc-600")}>
-                Restoran:{" "}
-                <span className="rounded-xl bg-[#1A1F1A] px-3 py-1 text-sm font-bold text-[#D4AF37]">
-                  {restaurantName || "Restoran"}
-                </span>
-              </p>
             </div>
           </div>
 
-          <div className="flex w-full gap-3 md:w-auto">
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className={cn(
-                "h-14 flex-1 rounded-xl font-bold transition-all md:flex-none",
-                isDark
-                  ? "border-white/10 text-zinc-300 hover:border-red-950/30 hover:bg-red-950/20 hover:text-red-400"
-                  : "border-[#0a2f26]/15 text-[#0a1915] hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-              )}
-            >
-              <LogOut className="mr-2.5 h-5 w-5" /> Chiqish
-            </Button>
-            <Button
-              onClick={() => setIsModalOpen(true)}
-              className="h-14 flex-1 rounded-xl bg-[#D4AF37] px-8 text-lg font-bold text-black shadow-2xl shadow-[#D4AF37]/20 transition-colors hover:bg-white md:flex-none"
-            >
-              <Plus className="mr-2.5 h-6 w-6" /> Qo'shish
-            </Button>
+          <div className="flex w-full md:w-auto items-center gap-4">
+            <button onClick={handleLogout} className={cn(
+              "group flex h-12 w-12 items-center justify-center rounded-xl border transition-all duration-300",
+              isDark ? "border-white/10 hover:border-red-500/50 hover:bg-red-500/10" : "border-black/10 hover:border-red-500/50 hover:bg-red-50"
+            )}>
+              <LogOut size={20} className={cn("transition-colors", isDark ? "text-white/50 group-hover:text-red-400" : "text-black/50 group-hover:text-red-500")} />
+            </button>
+            <button onClick={() => setIsModalOpen(true)} className="group relative flex h-12 items-center gap-3 overflow-hidden rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B38F24] px-8 font-bold text-black shadow-[0_10px_30px_rgba(212,175,55,0.3)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+              <span className="relative z-10 flex items-center gap-2">
+                <Plus size={20} /> Yangi Taom
+              </span>
+              <div className="absolute inset-0 z-0 bg-white/20 translate-y-full transition-transform duration-300 group-hover:translate-y-0" />
+            </button>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-          {/* LEFT: MENU LIST */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="mb-2 flex items-center justify-between p-1">
-              <h2
-                className={cn(
-                  "flex items-center gap-3 text-3xl font-extrabold tracking-tight",
-                  isDark ? "text-white" : "text-[#0a1915]"
-                )}
-              >
-                <ChefHat className="h-7 w-7 text-[#D4AF37]" strokeWidth={2} /> Menyudagi taomlar
+          {/* LEFT: MENU GALLERY (Bento Box Style) */}
+          <div className="lg:col-span-8 space-y-8">
+            <div className="flex items-center justify-between px-2">
+              <h2 className="text-2xl font-light tracking-tight flex items-center gap-3">
+                Kolleksiya <span className="text-sm font-bold text-[#D4AF37] px-3 py-1 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10">{items.length}</span>
               </h2>
-              <div className="flex items-center gap-2.5 rounded-full border border-white/5 bg-[#1A1F1A] px-5 py-2 text-sm font-extrabold text-[#D4AF37]">
-                <Tag className="h-4 w-4" />
-                {items.length} ta pozitsiya
-              </div>
             </div>
 
             {items.length === 0 ? (
-              <div
-                className={cn(
-                  "flex flex-col items-center rounded-[3rem] border-2 border-dashed py-28 text-center",
-                  isDark ? "border-white/5 bg-[#101010]" : "border-[#0a2f26]/12 bg-white"
-                )}
-              >
-                <div className="mb-6 rounded-full border border-white/5 bg-[#1A1F1A] p-7">
-                  <ChefHat className="h-12 w-12 text-[#D4AF37]" strokeWidth={1.5} />
+              <div className={cn("flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed py-32 transition-colors", isDark ? "border-white/10 bg-white/[0.01]" : "border-black/10 bg-black/[0.01]")}>
+                <div className="h-20 w-20 rounded-full border border-white/10 bg-gradient-to-tr from-[#111] to-[#222] flex items-center justify-center mb-6 shadow-2xl">
+                  <ChefHat size={32} className="text-[#D4AF37]" strokeWidth={1} />
                 </div>
-                <h3 className={cn("mb-3 text-3xl font-extrabold tracking-tight", isDark ? "text-white" : "text-[#0a1915]")}>
-                  Menyu hozircha bo'sh
-                </h3>
-                <p className={cn("mx-auto mb-10 max-w-sm text-lg font-medium leading-relaxed", isDark ? "text-zinc-500" : "text-zinc-600")}>
-                  Mijozlaringiz ko'rishi uchun birinchi taomni kiritishni boshlang.
-                </p>
-                <Button
-                  onClick={() => setIsModalOpen(true)}
-                  className="h-auto rounded-2xl bg-[#D4AF37] px-10 py-7 text-xl font-bold text-black shadow-2xl shadow-[#D4AF37]/30 transition-colors hover:bg-white"
-                >
-                  <Plus className="mr-2.5 h-6 w-6" /> Birinchi taomni qo'shish
-                </Button>
+                <h3 className="text-2xl font-light mb-2">San'at asaringizni yuklang</h3>
+                <p className="text-sm text-zinc-500">Hozircha menyu bo'sh. Birinchi taomni kiritib boshlang.</p>
               </div>
             ) : (
-              <div className="grid gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "group flex items-center justify-between rounded-[2rem] border p-6 shadow-sm transition-all hover:border-[#D4AF37]/30 hover:shadow-2xl hover:shadow-[#D4AF37]/10",
-                      isDark ? "border-white/5 bg-[#101010]" : "border-[#0a2f26]/10 bg-white",
-                      !item.isAvailable && (isDark ? "bg-[#080808]/50 opacity-60" : "bg-zinc-100/80 opacity-70")
-                    )}
-                  >
-                    <div className="flex items-center gap-7">
-                      <div className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-3xl border border-white/5 bg-[#1A1F1A] shadow-inner">
-                        {item.imageUrl ? (
-                          <img src={item.imageUrl} alt={item.name} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700 ease-out" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-[#0D1C0D]">
-                            <ImagePlus size={36} strokeWidth={1} />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col justify-center">
-                        <h3
-                          className={cn(
-                            "mb-3 text-2xl font-extrabold leading-tight tracking-tight transition-colors group-hover:text-[#D4AF37]",
-                            isDark ? "text-white" : "text-[#0a1915]"
-                          )}
-                        >
-                          {item.name}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <span className="rounded-xl border border-white/5 bg-[#1A1F1A] px-4 py-1.5 text-sm font-extrabold text-[#D4AF37]">
-                            {Number(item.price).toLocaleString()} so'm
-                          </span>
-                          <span
-                            className={cn(
-                              "rounded-lg border px-3 py-1 text-xs font-bold",
-                              isDark ? "border-white/5 bg-[#1A1A1A] text-zinc-300" : "border-[#0a2f26]/10 bg-[#f4f1ea] text-[#0a1915]"
-                            )}
-                          >
-                            {item.category}
-                          </span>
+                  <div key={item.id} className={cn(
+                    "group relative overflow-hidden rounded-[2rem] border transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_40px_80px_rgba(0,0,0,0.4)]",
+                    isDark ? "bg-[#0A0A0A] border-white/5 hover:border-[#D4AF37]/40" : "bg-white border-black/5 hover:border-[#D4AF37]/40 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)]",
+                    !item.isAvailable && "opacity-50 grayscale-[50%]"
+                  )}>
+
+                    {/* Image Area */}
+                    <div className="relative h-60 w-full overflow-hidden bg-[#111]">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover transition-transform duration-[1500ms] group-hover:scale-110" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-[#0d0d0d]">
+                          <ImagePlus size={40} className="text-zinc-800" strokeWidth={1} />
                         </div>
-                        {!item.isAvailable && (
-                          <span className="mt-3 flex items-center gap-1.5 text-xs font-bold text-red-400">
-                            <EyeOff size={14} /> Vaqtincha menyuda emas
-                          </span>
-                        )}
+                      )}
+                      {/* Gradient Overlay for Text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+                      {/* Floating Category Badge */}
+                      <div className="absolute top-4 left-4 rounded-full bg-black/50 backdrop-blur-md border border-white/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white">
+                        {item.category}
                       </div>
+
+                      {/* Status Badge */}
+                      {!item.isAvailable && (
+                        <div className="absolute top-4 right-4 rounded-full bg-red-500/80 backdrop-blur-md px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">
+                          Yashirilgan
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-3 pl-5">
-                      <button
-                        type="button"
-                        onClick={() => toggleAvailability(item.id, item.isAvailable)}
-                        className={cn(
-                          "rounded-2xl p-3.5 transition-all",
-                          item.isAvailable
-                            ? "text-zinc-500 hover:bg-[#1A2F1A] hover:text-emerald-400"
-                            : "text-zinc-500 hover:bg-[#1A1F1A] hover:text-[#D4AF37]"
-                        )}
-                        title={item.isAvailable ? "Yashirish" : "Ko'rsatish"}
-                      >
-                        {item.isAvailable ? <Eye size={24} /> : <EyeOff size={24} />}
+                    {/* Content Area */}
+                    <div className="relative p-6 -mt-12">
+                      <h3 className="text-2xl font-bold tracking-tight text-white mb-1 drop-shadow-md line-clamp-1">{item.name}</h3>
+                      <p className="text-2xl font-light text-[#D4AF37] tracking-tighter drop-shadow-md">
+                        {Number(item.price).toLocaleString()} <span className="text-sm font-medium opacity-70">UZS</span>
+                      </p>
+                    </div>
+
+                    {/* Hidden Actions (Reveals on Hover) */}
+                    <div className="absolute bottom-6 right-6 flex items-center gap-2 translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                      <button onClick={() => toggleAvailability(item.id, item.isAvailable)} className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white transition-colors hover:bg-white hover:text-black">
+                        {item.isAvailable ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteItem(item.id)}
-                        className="rounded-2xl p-3.5 text-zinc-500 transition-all hover:bg-red-950/30 hover:text-red-400"
-                        title="O'chirish"
-                      >
-                        <Trash2 size={24} />
+                      <button onClick={() => deleteItem(item.id)} className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/80 backdrop-blur-md border border-red-500 text-white transition-colors hover:bg-red-500">
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </div>
@@ -453,247 +313,153 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* QR */}
-          <div className="lg:col-span-1">
-            <div className="relative sticky top-10 overflow-hidden rounded-[3rem] border border-[#D4AF37]/20 bg-[#0D1C0D] p-9 text-center shadow-2xl shadow-black/20">
+          {/* RIGHT: VIP QR CARD */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-10">
+              <div className={cn(
+                "relative overflow-hidden rounded-[2.5rem] border p-8 shadow-2xl transition-all duration-700 group",
+                isDark ? "bg-gradient-to-b from-[#111] to-[#050505] border-white/10 shadow-[0_40px_80px_rgba(0,0,0,0.6)]" : "bg-gradient-to-b from-white to-zinc-100 border-black/10 shadow-[0_40px_80px_rgba(0,0,0,0.1)]"
+              )}>
+                {/* Metallic accents */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-50" />
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#D4AF37]/10 blur-[60px] pointer-events-none group-hover:bg-[#D4AF37]/20 transition-colors duration-1000" />
 
-              {/* Oltin va Yashil bezaklar */}
-              <div className="absolute -top-16 -right-16 w-52 h-52 bg-[#D4AF37]/10 rounded-full blur-[80px]"></div>
-              <div className="absolute -bottom-16 -left-16 w-52 h-52 bg-[#1A2F1A]/50 rounded-full blur-[80px]"></div>
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="mb-8 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-5 py-2 text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37] backdrop-blur-sm">
+                    Premium Menyu
+                  </div>
 
-              <div className="relative z-10 w-full flex flex-col items-center">
-                <div className="inline-flex items-center gap-2.5 bg-[#1A2F1A]/80 text-[#D4AF37] px-5 py-2.5 rounded-full mb-10 text-sm font-extrabold border border-white/5 backdrop-blur-md shadow-inner">
-                  <QrCode size={18} /> Raqamli Menyu
+                  <div className="relative mb-8 flex h-[240px] w-[240px] items-center justify-center rounded-3xl bg-white p-6 shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
+                    <div className="absolute inset-0 rounded-3xl border border-black/5" />
+                    {baseUrl && restaurantSlug ? (
+                      <QRCode id="qr-code-svg" value={`${baseUrl}/menu/${restaurantSlug}`} size={200} level="H" bgColor="#FFFFFF" fgColor="#000000" />
+                    ) : (
+                      <div className="animate-spin rounded-full border-2 border-[#D4AF37] border-t-transparent h-10 w-10" />
+                    )}
+                  </div>
+
+                  <h3 className="mb-2 text-2xl font-light tracking-tight">VIP QR Code</h3>
+                  <p className="mb-8 text-center text-sm font-medium text-zinc-500 leading-relaxed px-4">
+                    Stollaringiz uchun eksklyuziv formatda yuklab oling.
+                  </p>
+
+                  <button onClick={downloadQR} disabled={!baseUrl || !restaurantSlug} className="group relative w-full overflow-hidden rounded-2xl bg-[#111] border border-white/10 py-5 text-sm font-bold uppercase tracking-widest text-[#D4AF37] transition-all hover:border-[#D4AF37]/50 disabled:opacity-50">
+                    <span className="relative z-10 flex items-center justify-center gap-3">
+                      <Download size={18} /> PNG Yuklash
+                    </span>
+                    <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] transition-transform duration-700 group-hover:translate-x-[100%]" />
+                  </button>
+
+                  <a href={restaurantSlug ? `/menu/${restaurantSlug}` : "#"} target="_blank" rel="noopener noreferrer" className="mt-6 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:text-[#D4AF37]">
+                    Jonli ko'rish <MoveRight size={14} />
+                  </a>
                 </div>
-
-                {/* Skaner qilinadigan qism - Oq fonda qora bo'lishi shart */}
-                <div className="mb-10 cursor-pointer rounded-[2rem] border border-zinc-100 bg-white p-6 shadow-xl transition-transform duration-500 ease-out hover:scale-[1.02]">
-                  {baseUrl && restaurantSlug ? (
-                    <QRCode
-                      id="qr-code-svg"
-                      value={`${baseUrl}/menu/${restaurantSlug}`}
-                      size={200}
-                      level="H"
-                      bgColor="#FFFFFF"
-                      fgColor="#000000"
-                    />
-                  ) : (
-                    <div className="flex h-[200px] w-[200px] flex-col items-center justify-center gap-2 text-sm text-zinc-500">
-                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#D4AF37] border-t-transparent" />
-                      QR tayyorlanmoqda...
-                    </div>
-                  )}
-                </div>
-
-                <h2 className="mb-3 text-3xl font-extrabold tracking-tight text-white">QR kod</h2>
-                <p className="mb-10 text-base font-medium leading-relaxed text-zinc-400">
-                  PNG yuklab oling, chop eting va stollarga qo‘ying. Skaner uchun oq fon va qora nuqta tavsiya etiladi.
-                </p>
-
-                <Button
-                  type="button"
-                  onClick={downloadQR}
-                  disabled={!baseUrl || !restaurantSlug}
-                  className="w-full rounded-2xl border border-[#D4AF37]/30 bg-[#1A1F1A] py-7 text-xl font-extrabold text-[#D4AF37] shadow-xl shadow-black/10 transition-all hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Download className="mr-3 h-6 w-6" /> PNG yuklash
-                </Button>
-
-                <a
-                  href={restaurantSlug ? `/menu/${restaurantSlug}` : "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "mt-8 flex items-center justify-center gap-2.5 text-base font-semibold transition-colors",
-                    restaurantSlug ? "text-zinc-500 hover:text-[#D4AF37]" : "pointer-events-none text-zinc-600"
-                  )}
-                >
-                  <Search size={18} /> Menyuni brauzerda ochish
-                </a>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* PREMIUM MODAL: ADD ITEM */}
+      {/* ULTRA-PREMIUM MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xl">
-          <div
-            className={cn(
-              "max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-[3rem] border p-10 shadow-2xl",
-              isDark ? "border-white/5 bg-[#101010]" : "border-[#0a2f26]/10 bg-white"
-            )}
-          >
-            <div className="mb-10 flex items-start justify-between gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xl transition-all duration-500">
+          <div className={cn(
+            "relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] border shadow-[0_0_100px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-500 ease-out",
+            isDark ? "bg-[#0A0A0A] border-white/10" : "bg-white border-black/10"
+          )}>
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/5 px-10 py-8">
               <div>
-                <h2 className={cn("text-3xl font-extrabold tracking-tight", isDark ? "text-white" : "text-[#0a1915]")}>
-                  Menyuga taom qo&apos;shish
-                </h2>
-                <p className={cn("mt-2 text-base font-medium", isDark ? "text-zinc-400" : "text-zinc-600")}>
-                  Barcha kerakli ma&apos;lumotlarni kiriting va saqlang
-                </p>
+                <h2 className="text-2xl font-light tracking-tight">Yangi Taom</h2>
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37] mt-2">Kolleksiyaga qo'shish</p>
               </div>
-              <button
-                type="button"
-                onClick={closeModal}
-                className={cn(
-                  "rounded-full p-3 transition-colors",
-                  isDark ? "bg-[#1A1A1A] text-zinc-500 hover:bg-zinc-800" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-                )}
-              >
+              <button onClick={closeModal} className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all hover:bg-white/10 hover:rotate-90">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-7">
+            {/* Modal Body */}
+            <div className="max-h-[75vh] overflow-y-auto px-10 py-8 no-scrollbar">
+              <form onSubmit={handleSubmit} className="space-y-8">
 
-              {/* Rasm */}
-              <div>
-                <label className="group block w-full cursor-pointer">
-                  <div
-                    className={cn(
-                      "relative flex h-60 flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed transition-all",
-                      imagePreview
-                        ? "border-transparent bg-[#1A1F1A]"
-                        : isDark
-                          ? "border-white/5 bg-[#101010] hover:border-[#D4AF37]/40 hover:bg-[#1A1F1A]/50"
-                          : "border-[#0a2f26]/15 bg-[#f4f1ea] hover:border-[#D4AF37]/50"
-                    )}
-                  >
+                {/* Image Upload Area */}
+                <div>
+                  <label className="group relative flex h-[280px] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-white/10 bg-[#111] transition-all hover:border-[#D4AF37]/50">
                     {imagePreview ? (
                       <>
-                        <img src={imagePreview} alt="" className="h-full w-full object-cover opacity-80 transition-opacity duration-300 group-hover:opacity-40" />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-                          <span className="rounded-2xl border border-white/20 bg-white/10 px-6 py-3 text-base font-extrabold text-white shadow-lg backdrop-blur-lg">
-                            Boshqa rasm tanlash
-                          </span>
+                        <img src={imagePreview} alt="Preview" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                          <span className="rounded-full bg-white px-6 py-2 text-xs font-bold uppercase tracking-widest text-black shadow-2xl">O'zgartirish</span>
                         </div>
                       </>
                     ) : (
-                      <>
-                        <div className="mb-5 rounded-2xl border border-white/5 bg-[#1A1F1A] p-5 shadow-lg transition-all duration-300 group-hover:scale-110">
-                          <ImagePlus className="h-10 w-10 text-zinc-500 group-hover:text-[#D4AF37]" strokeWidth={1.5} />
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <div className="mb-4 rounded-full border border-white/5 bg-white/5 p-5 shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:border-[#D4AF37]/30">
+                          <ImagePlus size={32} className="text-zinc-400 group-hover:text-[#D4AF37]" strokeWidth={1} />
                         </div>
-                        <span className={cn("mb-1 text-lg font-extrabold", isDark ? "text-white" : "text-[#0a1915]")}>
-                          Yuqori sifatli rasm yuklang
-                        </span>
-                        <span className="text-sm font-medium text-zinc-500">PNG, JPG (max 5MB)</span>
-                      </>
+                        <span className="text-sm font-light text-zinc-300">Suratni yuklang</span>
+                        <span className="mt-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">HQ • Max 5MB</span>
+                      </div>
                     )}
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageChange}
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label className={cn("mb-2.5 block pl-1 text-sm font-extrabold", isDark ? "text-zinc-300" : "text-[#0a1915]")}>
-                  Taom nomi <span className="text-red-500">*</span>
-                </label>
-                <input
-                  placeholder="Masalan: maxsus palov"
-                  className={cn(
-                    "w-full rounded-2xl border p-5 text-lg font-semibold outline-none transition-all placeholder:text-zinc-500 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10",
-                    isDark
-                      ? "border-white/5 bg-[#1A1F1A] text-white focus:bg-[#101010]"
-                      : "border-[#0a2f26]/12 bg-[#f4f1ea] text-[#0a1915] focus:bg-white"
-                  )}
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div>
-                  <label className={cn("mb-2.5 block pl-1 text-sm font-extrabold", isDark ? "text-zinc-300" : "text-[#0a1915]")}>
-                    Menyu bo&apos;limi <span className="text-red-500">*</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                   </label>
-                  <div className="relative">
-                    <select
-                      className={cn(
-                        "w-full cursor-pointer appearance-none rounded-2xl border p-5 text-lg font-semibold outline-none transition-all focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10",
-                        isDark
-                          ? "border-white/5 bg-[#1A1F1A] text-white focus:bg-[#101010]"
-                          : "border-[#0a2f26]/12 bg-[#f4f1ea] text-[#0a1915] focus:bg-white"
-                      )}
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    >
-                      {PREDEFINED_CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 font-bold">▼</div>
+                </div>
+
+                {/* Form Inputs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-2">Taom Nomi</label>
+                    <input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className={cn("w-full rounded-2xl border bg-transparent p-5 text-xl font-light outline-none transition-all focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]", isDark ? "border-white/10 text-white" : "border-black/10 text-black")}
+                      placeholder="Masalan: Wagyu Steak" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-2">Kategoriya</label>
+                    <div className="relative">
+                      <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        className={cn("w-full cursor-pointer appearance-none rounded-2xl border bg-transparent p-5 text-base font-medium outline-none transition-all focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]", isDark ? "border-white/10 text-white" : "border-black/10 text-black")}>
+                        {PREDEFINED_CATEGORIES.map((cat) => <option key={cat} value={cat} className="bg-[#111] text-white">{cat}</option>)}
+                      </select>
+                      <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">▼</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-2">Narxi (UZS)</label>
+                    <input type="number" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      className={cn("w-full rounded-2xl border bg-transparent p-5 text-base font-medium text-[#D4AF37] outline-none transition-all focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]", isDark ? "border-white/10" : "border-black/10")}
+                      placeholder="0" />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-2">Tarkibi (Ixtiyoriy)</label>
+                    <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className={cn("min-h-[120px] w-full resize-none rounded-2xl border bg-transparent p-5 text-base font-light outline-none transition-all focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]", isDark ? "border-white/10 text-white" : "border-black/10 text-black")}
+                      placeholder="Taom haqida qisqacha ma'lumot..." />
                   </div>
                 </div>
-                <div>
-                  <label className={cn("mb-2.5 block pl-1 text-sm font-extrabold", isDark ? "text-zinc-300" : "text-[#0a1915]")}>
-                    Narx <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      placeholder="0"
-                      type="number"
-                      className={cn(
-                        "w-full rounded-2xl border p-5 pl-5 pr-20 text-xl font-extrabold text-[#D4AF37] outline-none transition-all focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10",
-                        isDark ? "border-white/5 bg-[#1A1F1A] focus:bg-[#101010]" : "border-[#0a2f26]/12 bg-[#f4f1ea] focus:bg-white"
-                      )}
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      required
-                    />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 font-extrabold bg-[#1A1A1A] px-3 py-1.5 rounded-xl text-xs uppercase tracking-wider border border-white/5">so&apos;m</span>
-                  </div>
+
+                {/* Footer Buttons */}
+                <div className="flex gap-4 pt-4">
+                  <Button type="button" onClick={closeModal} className="h-16 flex-1 rounded-2xl border border-white/10 bg-transparent text-sm font-bold uppercase tracking-widest transition-colors hover:bg-white/5">
+                    Bekor qilish
+                  </Button>
+                  <Button type="submit" isLoading={isSubmitting} className="h-16 flex-[2] rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#B38F24] text-sm font-bold uppercase tracking-widest text-black shadow-[0_10px_30px_rgba(212,175,55,0.3)] transition-transform hover:scale-[1.02] active:scale-[0.98]">
+                    {isSubmitting ? "Saqlanmoqda..." : "Kolleksiyaga Qo'shish"}
+                  </Button>
                 </div>
-              </div>
-
-              <div>
-                <label className={cn("mb-2.5 block pl-1 text-sm font-extrabold", isDark ? "text-zinc-300" : "text-[#0a1915]")}>
-                  Tarkib yoki izoh <span className="font-normal text-zinc-500">(ixtiyoriy)</span>
-                </label>
-                <textarea
-                  placeholder="Masalan: guruch, go'sht, ziravorlar..."
-                  className={cn(
-                    "min-h-[120px] w-full resize-none rounded-2xl border p-5 text-base font-medium leading-relaxed outline-none transition-all placeholder:text-zinc-500 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10",
-                    isDark
-                      ? "border-white/5 bg-[#1A1F1A] text-white focus:bg-[#101010]"
-                      : "border-[#0a2f26]/12 bg-[#f4f1ea] text-[#0a1915] focus:bg-white"
-                  )}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-
-              <div className={cn("flex gap-4 border-t pt-6", isDark ? "border-white/5" : "border-[#0a2f26]/10")}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    "h-auto flex-1 rounded-2xl py-7 text-lg font-extrabold transition-colors",
-                    isDark
-                      ? "border-white/10 text-zinc-400 hover:bg-[#1A1A1A] hover:text-white"
-                      : "border-[#0a2f26]/15 text-zinc-600 hover:bg-zinc-100"
-                  )}
-                  onClick={closeModal}
-                >
-                  Bekor qilish
-                </Button>
-                <Button type="submit" className="h-auto flex-1 rounded-2xl bg-[#D4AF37] py-7 text-xl font-extrabold text-black shadow-2xl shadow-[#D4AF37]/30 transition-all hover:bg-white" isLoading={isSubmitting}>
-                  {isSubmitting ? "Saqlanmoqda..." : "Menyuga qo'shish"}
-                </Button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }
