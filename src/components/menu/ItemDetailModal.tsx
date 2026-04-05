@@ -18,7 +18,7 @@ export function ItemDetailModal({ item, onClose, isDark }: Props) {
   useEffect(() => {
     if (item) {
       setTimeout(() => setIsVisible(true), 10);
-      document.body.style.overflow = "hidden"; // Orqa fon skroll bo'lishini to'xtatish
+      document.body.style.overflow = "hidden"; // Orqa fonni qotirib qo'yish
     } else {
       setIsVisible(false);
       document.body.style.overflow = "auto";
@@ -30,35 +30,34 @@ export function ItemDetailModal({ item, onClose, isDark }: Props) {
 
   return (
     <div className={cn(
-      "fixed inset-0 z-50 flex items-end sm:items-center justify-center transition-all duration-400",
+      "fixed inset-0 z-50 flex items-end sm:items-center justify-center transition-colors duration-400",
       isVisible ? "bg-black/80 backdrop-blur-sm" : "bg-black/0 pointer-events-none"
     )}>
 
       <div className="absolute inset-0" onClick={onClose} />
 
-      {/* DYNAMIC MODAL BOX */}
+      {/* DYNAMIC MODAL BOX (Qora va Oq rejimga to'liq javob beradi) */}
       <div className={cn(
-        "relative w-full h-[85vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto no-scrollbar sm:max-w-md sm:rounded-2xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] rounded-t-3xl",
-        isDark ? "bg-[#111]" : "bg-white",
+        "relative w-full h-[85vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto no-scrollbar sm:max-w-md sm:rounded-2xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] rounded-t-3xl shadow-2xl border-t",
+        isDark ? "bg-[#111] border-white/10" : "bg-white border-black/10",
         isVisible ? "translate-y-0" : "translate-y-full"
       )}>
 
-        {/* Modalni yopish tugmasi */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-transform active:scale-90"
+          className="absolute right-4 top-4 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md transition-transform active:scale-90"
         >
           <X size={18} />
         </button>
 
-        {/* RASM QISMI (Aspect Ratio bu buzilmaydi) */}
-        <div className="relative w-full aspect-[4/5] sm:aspect-square bg-zinc-900">
+        {/* RASM QISMI: Katta, aniq va muammosiz */}
+        <div className={cn("relative w-full aspect-[4/5] sm:aspect-square", isDark ? "bg-zinc-900" : "bg-zinc-100")}>
           {item.imageUrl ? (
             <Image
               src={item.imageUrl}
               alt={item.name}
               fill
-              unoptimized={true} // Firebase kutishlarini yo'q qiladi
+              unoptimized={true} // Firebase'dan shundoqqina tezlikda tortadi
               className="object-cover"
             />
           ) : (
@@ -66,13 +65,13 @@ export function ItemDetailModal({ item, onClose, isDark }: Props) {
               <ChefHat size={40} />
             </div>
           )}
-          {/* Teks o'qilishi uchun gradient fon */}
+          {/* Oq rejimda oq, Qora rejimda qora gradient (text o'qilishi uchun) */}
           <div className={cn("absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t", isDark ? "from-[#111]" : "from-white")} />
         </div>
 
         {/* MA'LUMOTLAR QISMI */}
         <div className="relative px-6 pb-10 -mt-6 z-10">
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex justify-between items-start mb-3">
             <div>
               <span className={cn("text-[9px] font-bold uppercase tracking-widest", isDark ? "text-[#D4AF37]" : "text-[#B38F24]")}>
                 {item.category}
@@ -83,15 +82,14 @@ export function ItemDetailModal({ item, onClose, isDark }: Props) {
             </div>
           </div>
 
-          <p className={cn("text-[13px] leading-relaxed mb-6", isDark ? "text-zinc-400" : "text-zinc-600")}>
+          <p className={cn("text-[12px] leading-relaxed mb-6", isDark ? "text-zinc-400" : "text-zinc-600")}>
             {item.description || "Ushbu taom haqida batafsil ma'lumot keltirilmagan."}
           </p>
 
-          {/* KATTA NARX */}
-          <div className={cn("mt-4 pt-4 border-t", isDark ? "border-white/10" : "border-black/10")}>
-            <span className="block text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Narxi</span>
+          <div className={cn("mt-2 pt-4 border-t", isDark ? "border-white/10" : "border-black/10")}>
+            <span className="block text-[9px] uppercase tracking-widest text-zinc-500 mb-1">Narxi</span>
             <span className={cn("text-3xl font-black tracking-tighter", isDark ? "text-[#D4AF37]" : "text-[#B38F24]")}>
-              {Number(item.price).toLocaleString()} <span className="text-sm uppercase tracking-widest opacity-80">UZS</span>
+              {Number(item.price).toLocaleString()} <span className="text-[11px] uppercase tracking-widest opacity-80">UZS</span>
             </span>
           </div>
         </div>

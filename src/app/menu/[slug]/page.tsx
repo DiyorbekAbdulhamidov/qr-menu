@@ -7,22 +7,24 @@ import { MenuItem, Restaurant } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Search, ChefHat, Moon, Sun, MapPin, Phone, Instagram } from "lucide-react";
+import { Search, ChefHat, Moon, Sun, Monitor, MapPin, Phone, Instagram } from "lucide-react";
 import { ItemDetailModal } from "@/components/menu/ItemDetailModal";
 import { useAppTheme } from "@/lib/useAppTheme";
 
 export default function PublicMenuPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
-  const { mode, isDark, cycleTheme } = useAppTheme();
+
+  // XATO TO'G'IRLANDI: Endi to'g'ri nomlar bilan chaqirildi (mode, setThemeMode)
+  const { mode, isDark, setThemeMode } = useAppTheme();
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("Barchasi");
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
 
   useEffect(() => {
-    // Sayt fonini to'liq nazorat qilish (tepa qora, past oq bo'lib qolmasligi uchun)
     document.body.style.backgroundColor = isDark ? "#050505" : "#FAFAFA";
   }, [isDark]);
 
@@ -58,85 +60,92 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
   if (loading) return <MenuSkeleton isDark={isDark} />;
 
   if (!restaurant) {
-    return <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center font-playfair text-xl tracking-widest">Topilmadi</div>;
+    return <div className="min-h-screen bg-[#050505] text-[#D4AF37] flex items-center justify-center text-xl tracking-widest font-bold">Topilmadi</div>;
   }
 
   return (
     <div className={cn(
-      "min-h-screen pb-24 font-sans transition-colors duration-500",
+      "min-h-screen pb-20 font-sans transition-colors duration-300 overflow-x-hidden",
       isDark ? "bg-[#050505] text-white" : "bg-[#FAFAFA] text-[#111]"
     )}>
 
-      {/* 1. HEADER (Bodrum Instagram Style) */}
+      {/* HEADER QISMI */}
       <div className={cn(
-        "w-full pt-12 pb-6 flex flex-col items-center justify-center transition-colors",
+        "w-full pt-8 pb-4 flex flex-col items-center justify-center relative transition-colors",
         isDark ? "bg-[#0A0A0A] border-b border-white/5" : "bg-white border-b border-black/5 shadow-sm"
       )}>
-        {/* Tungi/Kunduzgi rejim tugmasi */}
-        <button
-          onClick={cycleTheme}
-          className={cn(
-            "absolute top-5 right-5 p-2 rounded-full border transition-all",
-            isDark ? "border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10" : "border-black/10 text-black hover:bg-black/5"
-          )}
-        >
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
 
-        {/* Logo xuddi Instagram profildek */}
-        <div className="relative h-28 w-28 sm:h-32 sm:w-32 mb-4 rounded-full p-1 border-2 border-[#D4AF37]">
-          <div className={cn("w-full h-full rounded-full overflow-hidden flex items-center justify-center", isDark ? "bg-black" : "bg-white")}>
+        {/* THEME TOGGLE (Tungi/Kunduzgi/Sistema) */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 lg:right-12 z-50">
+          <button
+            onClick={() => setThemeMenuOpen(!themeMenuOpen)}
+            className={cn(
+              "flex items-center justify-center h-10 w-10 rounded-full border transition-all duration-300 hover:scale-105 active:scale-95",
+              isDark ? "border-[#D4AF37]/30 text-[#D4AF37] bg-black/50 hover:bg-[#D4AF37]/10" : "border-black/10 text-black bg-white/50 hover:bg-black/5"
+            )}
+          >
+            {mode === 'system' ? <Monitor size={18} /> : isDark ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+
+          {themeMenuOpen && (
+            <div className={cn(
+              "absolute right-0 mt-3 w-40 rounded-2xl border p-1.5 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 origin-top-right",
+              isDark ? "bg-[#111]/95 border-white/10" : "bg-white/95 border-black/10"
+            )}>
+              <button onClick={() => { setThemeMode('light'); setThemeMenuOpen(false); }} className={cn("flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-bold transition-all", isDark ? "text-zinc-400 hover:bg-white/10 hover:text-white" : "text-zinc-600 hover:bg-black/5 hover:text-black")}><Sun size={16} /> Kunduzgi</button>
+              <button onClick={() => { setThemeMode('dark'); setThemeMenuOpen(false); }} className={cn("flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-bold transition-all", isDark ? "text-zinc-400 hover:bg-white/10 hover:text-white" : "text-zinc-600 hover:bg-black/5 hover:text-black")}><Moon size={16} /> Tungi</button>
+              <button onClick={() => { setThemeMode('system'); setThemeMenuOpen(false); }} className={cn("flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-bold transition-all", isDark ? "text-zinc-400 hover:bg-white/10 hover:text-white" : "text-zinc-600 hover:bg-black/5 hover:text-black")}><Monitor size={16} /> Sistema</button>
+            </div>
+          )}
+        </div>
+
+        {/* LOGO & TITLE */}
+        <div className="relative h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 mb-3 rounded-full p-[2px] border-2 border-[#D4AF37] transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.2)]">
+          <div className={cn("w-full h-full rounded-full overflow-hidden flex items-center justify-center", isDark ? "bg-[#050505]" : "bg-white")}>
             {restaurant.logoUrl ? (
               <Image src={restaurant.logoUrl} alt="Logo" fill className="object-cover" unoptimized />
             ) : (
-              <ChefHat size={40} className="text-[#D4AF37]" />
+              <ChefHat className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-[#D4AF37]" />
             )}
           </div>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-widest text-center" style={{ fontFamily: "var(--font-playfair)" }}>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.2em] text-center" style={{ fontFamily: "var(--font-playfair)" }}>
           {restaurant.name}
         </h1>
-        <p className={cn("text-xs font-medium mt-1 uppercase tracking-widest", isDark ? "text-zinc-400" : "text-zinc-500")}>
-          Bodrum Oilaviy Turk Restorani
-        </p>
 
-        {/* Info Links */}
         <div className="flex items-center gap-6 mt-4">
-          <a href="#" className="flex flex-col items-center text-[#D4AF37] hover:opacity-80"><Phone size={18} /><span className="text-[9px] mt-1">Aloqa</span></a>
-          <a href="#" className="flex flex-col items-center text-[#D4AF37] hover:opacity-80"><MapPin size={18} /><span className="text-[9px] mt-1">Manzil</span></a>
-          <a href="#" className="flex flex-col items-center text-[#D4AF37] hover:opacity-80"><Instagram size={18} /><span className="text-[9px] mt-1">Instagram</span></a>
+          <a href="#" className="text-[#D4AF37] hover:text-white transition-colors active:scale-90"><Phone size={18} /></a>
+          <a href="#" className="text-[#D4AF37] hover:text-white transition-colors active:scale-90"><MapPin size={18} /></a>
+          <a href="#" className="text-[#D4AF37] hover:text-white transition-colors active:scale-90"><Instagram size={18} /></a>
         </div>
       </div>
 
-      {/* 2. INSTAGRAM HIGHLIGHTS (Kategoriyalar navigatsiyasi) */}
+      {/* KATEGORIYALAR */}
       <div className={cn("sticky top-0 z-40 py-4 shadow-sm backdrop-blur-xl transition-all", isDark ? "bg-[#050505]/95 border-b border-white/5" : "bg-[#FAFAFA]/95 border-b border-black/5")}>
-        <div className="max-w-4xl mx-auto px-2">
-          <nav className="flex items-start gap-4 overflow-x-auto no-scrollbar px-2 pb-2">
+        <div className="max-w-7xl mx-auto w-full px-2 lg:px-8">
+          <nav className="flex items-start gap-3 sm:gap-5 overflow-x-auto no-scrollbar px-2 pb-2 mx-auto w-max min-w-full lg:min-w-0 lg:justify-center lg:flex-wrap">
             {categories.map((cat) => {
               const isActive = activeCategory === cat;
               return (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className="flex flex-col items-center flex-shrink-0 w-16 sm:w-20 gap-2 group outline-none"
+                  className="flex flex-col items-center flex-shrink-0 w-16 sm:w-20 gap-2 outline-none group"
                 >
-                  {/* Dumaloq Highlight Ikonkasi */}
                   <div className={cn(
                     "w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-[2px] transition-all p-[2px]",
-                    isActive ? "border-[#D4AF37]" : isDark ? "border-zinc-800 group-hover:border-zinc-600" : "border-zinc-300 group-hover:border-zinc-400"
+                    isActive ? "border-[#D4AF37]" : isDark ? "border-zinc-800 hover:border-[#D4AF37]/50" : "border-zinc-300 hover:border-[#D4AF37]/50"
                   )}>
                     <div className={cn(
                       "w-full h-full rounded-full flex items-center justify-center transition-colors",
-                      isActive ? "bg-[#D4AF37] text-black" : isDark ? "bg-[#111] text-[#D4AF37]" : "bg-white text-[#B38F24] border border-black/5"
+                      isActive ? "bg-[#D4AF37] text-black" : isDark ? "bg-[#111] text-[#D4AF37]" : "bg-white text-[#B38F24]"
                     )}>
-                      {/* Barchasi uchun yulduz, qolgani uchun dumaloq nuqta yoki bosh harf */}
-                      <span className="text-sm font-bold">{cat.substring(0, 2).toUpperCase()}</span>
+                      <span className="text-xs sm:text-sm font-bold">{cat.substring(0, 2).toUpperCase()}</span>
                     </div>
                   </div>
-                  {/* Kategoriya nomi */}
                   <span className={cn(
-                    "text-[10px] sm:text-[11px] font-bold text-center leading-tight transition-colors",
+                    "text-[10px] sm:text-[11px] font-bold text-center leading-tight transition-colors w-full truncate px-1",
                     isActive ? (isDark ? "text-white" : "text-black") : "text-zinc-500"
                   )}>
                     {cat}
@@ -148,61 +157,59 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
         </div>
       </div>
 
-      {/* 3. ASOSIY MENYU KARTALARI (Xato to'g'irlandi: Rasm to'liq, narx alohida joyda) */}
-      <main className="max-w-4xl mx-auto px-4 pt-6 sm:px-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+      {/* KARTALAR GRIDI */}
+      <main className="max-w-7xl mx-auto px-4 pt-6 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6">
           {filteredItems.map((item) => (
             <button
               key={item.id}
               disabled={!item.isAvailable}
               onClick={() => item.isAvailable && setSelectedItem(item)}
               className={cn(
-                "group flex flex-col rounded-2xl overflow-hidden text-left transition-all active:scale-[0.98]",
-                isDark ? "bg-[#111] border border-white/5" : "bg-white border border-black/10 shadow-sm",
-                !item.isAvailable && "opacity-40 grayscale pointer-events-none"
+                "group flex flex-col rounded-2xl overflow-hidden text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl active:scale-[0.98]",
+                isDark ? "bg-[#111] border border-white/5 hover:border-[#D4AF37]/30" : "bg-white border border-black/5 shadow-md hover:border-[#D4AF37]/30",
+                !item.isAvailable && "opacity-40 grayscale pointer-events-none hover:translate-y-0"
               )}
             >
-              {/* RASM QISMI: Narxdan xoli, toza aspect ratio */}
               <div className="relative w-full aspect-[4/5] bg-zinc-900 overflow-hidden">
                 {item.imageUrl ? (
                   <Image
                     src={item.imageUrl}
                     alt={item.name}
                     fill
-                    unoptimized={true} // Qotishni oldini oladi
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    unoptimized={true}
+                    className="object-cover transition-transform duration-[1500ms] group-hover:scale-110"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[#D4AF37]/30">
+                  <div className="flex h-full w-full items-center justify-center text-[#D4AF37]/30 bg-[#0A0A0A]">
                     <ChefHat size={32} />
                   </div>
                 )}
 
-                {/* Vaqtincha yo'q statusi */}
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-500 z-10 pointer-events-none" />
+
                 {!item.isAvailable && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <span className="bg-[#D4AF37] text-black px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">Tugagan</span>
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
+                    <span className="bg-[#D4AF37] text-black px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded">Tugagan</span>
                   </div>
                 )}
               </div>
 
-              {/* MA'LUMOT VA NARX QISMI (Rasm ostida, aniq va ko'zga tashlanadigan) */}
-              <div className="flex flex-col flex-1 p-3 sm:p-4">
+              <div className="flex flex-col flex-1 p-3 sm:p-4 z-20 relative">
                 <h3 className={cn(
-                  "text-sm sm:text-base font-bold leading-tight mb-1",
-                  isDark ? "text-white" : "text-black"
+                  "text-[14px] sm:text-[16px] font-bold leading-tight mb-1.5 line-clamp-2",
+                  isDark ? "text-white" : "text-[#111]"
                 )} style={{ fontFamily: "var(--font-playfair)" }}>
                   {item.name}
                 </h3>
 
                 <p className={cn("text-[10px] sm:text-[11px] line-clamp-2 leading-snug mb-3 flex-1", isDark ? "text-zinc-400" : "text-zinc-500")}>
-                  {item.description || "Taom tarkibi va ma'lumotlari."}
+                  {item.description || "Taom tarkibi va retsepti haqida ma'lumot."}
                 </p>
 
-                {/* NARX: Eng asosiysi hammaga birinchi ko'rinadigan qism */}
-                <div className="mt-auto">
-                  <span className={cn("text-base sm:text-lg font-black tracking-tight", isDark ? "text-[#D4AF37]" : "text-[#B38F24]")}>
-                    {Number(item.price).toLocaleString()} <span className="text-[9px] uppercase ml-0.5 opacity-80">UZS</span>
+                <div className="mt-auto pt-3 border-t border-[#D4AF37]/15">
+                  <span className={cn("text-[15px] sm:text-[18px] font-black tracking-tighter", isDark ? "text-[#D4AF37]" : "text-[#B38F24]")}>
+                    {Number(item.price).toLocaleString()} <span className="text-[9px] sm:text-[10px] uppercase tracking-widest opacity-80">UZS</span>
                   </span>
                 </div>
               </div>
@@ -211,9 +218,9 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
         </div>
 
         {filteredItems.length === 0 && !loading && (
-          <div className="py-20 text-center">
-            <Search size={32} className="mx-auto mb-3 text-zinc-500" />
-            <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Hech narsa topilmadi</p>
+          <div className="py-32 text-center">
+            <Search size={40} className="mx-auto mb-4 text-[#D4AF37]/40" />
+            <p className="text-[12px] font-bold uppercase tracking-[0.3em] text-zinc-500">Hech narsa topilmadi</p>
           </div>
         )}
       </main>
@@ -228,30 +235,44 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
   );
 }
 
-// SKELETON
 function MenuSkeleton({ isDark }: { isDark: boolean }) {
+  const baseBg = isDark ? "bg-[#111]" : "bg-white";
+  const pulseBg = isDark ? "bg-[#1a1a1a]" : "bg-zinc-200";
+  const lineBg = isDark ? "bg-[#222]" : "bg-zinc-300";
+
   return (
-    <div className={cn("min-h-screen", isDark ? "bg-[#050505]" : "bg-[#FAFAFA]")}>
-      <div className="pt-12 pb-6 flex flex-col items-center">
-        <Skeleton className={cn("w-28 h-28 rounded-full mb-4", isDark ? "bg-[#111]" : "bg-zinc-200")} />
-        <Skeleton className={cn("w-48 h-6 rounded-md", isDark ? "bg-[#111]" : "bg-zinc-200")} />
+    <div className={cn("min-h-screen overflow-x-hidden", isDark ? "bg-[#050505]" : "bg-[#FAFAFA]")}>
+      <div className="pt-8 pb-4 flex flex-col items-center">
+        <Skeleton className={cn("w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full mb-3", pulseBg)} />
+        <Skeleton className={cn("w-48 h-6 sm:h-8 rounded-md mb-4", pulseBg)} />
+        <div className="flex gap-6">
+          <Skeleton className={cn("w-5 h-5 rounded", pulseBg)} />
+          <Skeleton className={cn("w-5 h-5 rounded", pulseBg)} />
+          <Skeleton className={cn("w-5 h-5 rounded", pulseBg)} />
+        </div>
       </div>
-      <div className="flex gap-4 px-4 py-4 overflow-hidden">
-        {[1, 2, 3, 4, 5].map(i => (
+
+      <div className="flex lg:justify-center gap-4 px-4 py-4 overflow-hidden max-w-7xl mx-auto w-full">
+        {[1, 2, 3, 4, 5, 6, 7].map(i => (
           <div key={i} className="flex flex-col items-center gap-2">
-            <Skeleton className={cn("w-16 h-16 rounded-full", isDark ? "bg-[#111]" : "bg-zinc-200")} />
-            <Skeleton className={cn("w-12 h-2", isDark ? "bg-[#111]" : "bg-zinc-200")} />
+            <Skeleton className={cn("w-14 h-14 sm:w-16 sm:h-16 rounded-full", pulseBg)} />
+            <Skeleton className={cn("w-10 h-2 rounded-sm", pulseBg)} />
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-4 pt-6">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className={cn("rounded-2xl overflow-hidden", isDark ? "bg-[#111]" : "bg-white border border-black/5")}>
-            <Skeleton className={cn("w-full aspect-[4/5]", isDark ? "bg-[#1a1a1a]" : "bg-zinc-200")} />
-            <div className="p-3">
-              <Skeleton className={cn("w-3/4 h-4 mb-2", isDark ? "bg-[#222]" : "bg-zinc-200")} />
-              <Skeleton className={cn("w-full h-3 mb-4", isDark ? "bg-[#222]" : "bg-zinc-200")} />
-              <Skeleton className={cn("w-1/2 h-5", isDark ? "bg-[#222]" : "bg-zinc-200")} />
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6 px-4 pt-6 max-w-7xl mx-auto">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => (
+          <div key={i} className={cn("rounded-2xl overflow-hidden flex flex-col border", baseBg, isDark ? "border-white/5" : "border-black/5")}>
+            <Skeleton className={cn("w-full aspect-[4/5] rounded-none", pulseBg)} />
+            <div className="flex flex-col p-3 sm:p-4 flex-1">
+              <Skeleton className={cn("w-full h-4 mb-1.5 rounded", lineBg)} />
+              <Skeleton className={cn("w-2/3 h-4 mb-4 rounded", lineBg)} />
+              <Skeleton className={cn("w-full h-2 mb-2 rounded", lineBg)} />
+              <Skeleton className={cn("w-4/5 h-2 mb-4 rounded", lineBg)} />
+              <div className={cn("mt-auto pt-3 border-t", isDark ? "border-white/10" : "border-black/5")}>
+                <Skeleton className={cn("w-1/2 h-5 sm:h-6 rounded", lineBg)} />
+              </div>
             </div>
           </div>
         ))}
