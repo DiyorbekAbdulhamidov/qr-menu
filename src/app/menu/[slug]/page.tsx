@@ -1,77 +1,52 @@
 "use client";
 
-import { useEffect, useState, use, useRef } from "react";
-import {
-  collection,
-  query,
-  getDocs,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { useEffect, useState, use, useMemo, useRef } from "react";
+import { collection, query, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { MenuItem, Restaurant } from "@/lib/types";
+import { MenuItem as BaseMenuItem, Restaurant } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { Search, ChefHat, Moon, Sun, Monitor, MapPin, Phone, Instagram } from "lucide-react";
-import { ItemDetailModal } from "@/components/menu/ItemDetailModal";
+import { ChefHat, Search, Moon, Sun, Monitor, Clock, Wine } from "lucide-react";
 import { useAppTheme } from "@/lib/useAppTheme";
+import { ItemDetailModal } from "@/components/menu/ItemDetailModal"; // DIQQAT: Modal shu yerdan chaqiriladi
 
-export default function PublicMenuPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export interface MenuItem extends BaseMenuItem { subCategory?: string; }
+interface CategoryData { id: string; name: string; startTime: string; endTime: string; isActive: boolean; }
+const isDrinkCategory = (name: string) => /ichimlik|napitki|drink|напитки|bar/i.test(name);
+
+export function isWithinTimeRange(start: string, end: string) {
+  if (!start || !end) return true;
+  const now = new Date(); const current = now.getHours() * 60 + now.getMinutes();
+  const [sh, sm] = start.split(":").map(Number); const [eh, em] = end.split(":").map(Number);
+  const startMins = sh * 60 + sm; const endMins = eh * 60 + em;
+  return startMins <= endMins ? (current >= startMins && current <= endMins) : (current >= startMins || current <= endMins);
+}
+
+export default function PublicMenuPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const { mode, isDark, setThemeMode } = useAppTheme();
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [categories, setCategories] = useState<CategoryData[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("Barchasi");
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [activeCategoryId, setActiveCategoryId] = useState<string>("all");
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-
-  // BUG FIX: theme menu container ref — click-outside aniqlash uchun
   const themeMenuRef = useRef<HTMLDivElement>(null);
 
-  // BUG FIX: body background — cleanup bilan (navigatsiyada qolmasligi uchun)
+  // MODAL UCHUN STATE
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
   useEffect(() => {
-    const prev = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = isDark ? "#050505" : "#FAFAFA";
-    return () => {
-      document.body.style.backgroundColor = prev;
-    };
+    const prev = document.body.style.backgroundColor; document.body.style.backgroundColor = isDark ? "#050505" : "#FAFAFA";
+    return () => { document.body.style.backgroundColor = prev; };
   }, [isDark]);
 
-  // BUG FIX: theme menu — tashqariga bosish va Escape klavishi bilan yopiladi
   useEffect(() => {
     if (!themeMenuOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setThemeMenuOpen(false);
-    };
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        themeMenuRef.current &&
-        !themeMenuRef.current.contains(e.target as Node)
-      ) {
-        setThemeMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    // setTimeout — opening click ni e'tiborsiz qoldirmaslik uchun
-    const timer = setTimeout(() => {
-      document.addEventListener("click", handleClickOutside);
-    }, 0);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      clearTimeout(timer);
-      document.removeEventListener("click", handleClickOutside);
-    };
+    const handleClickOutside = (e: MouseEvent) => { if (themeMenuRef.current && !themeMenuRef.current.contains(e.target as Node)) setThemeMenuOpen(false); };
+    const timer = setTimeout(() => document.addEventListener("click", handleClickOutside), 0);
+    return () => { clearTimeout(timer); document.removeEventListener("click", handleClickOutside); };
   }, [themeMenuOpen]);
 
   useEffect(() => {
@@ -79,452 +54,162 @@ export default function PublicMenuPage({
       try {
         const restSnap = await getDoc(doc(db, "restaurants", slug));
         if (!restSnap.exists()) return;
+        const rData = restSnap.data();
+        setRestaurant({ id: slug, name: rData.name || "PREMIUM RESTAURANT", ownerId: rData.ownerId || "", logoUrl: rData.logoUrl });
 
-        const r = restSnap.data();
-        setRestaurant({
-          id: slug,
-          name: (r.name as string) || "BODRUM UZ",
-          ownerId: (r.ownerId as string) || "",
-          logoUrl: r.logoUrl as string | undefined,
-        });
+        let cats: CategoryData[] = rData.categories || [];
+        cats = cats.filter(c => c.isActive); setCategories(cats);
 
-        const itemsRef = collection(db, "restaurants", slug, "menuItems");
-        const itemsSnapshot = await getDocs(query(itemsRef));
-        const items = itemsSnapshot.docs.map(
-          (d) => ({ id: d.id, ...d.data() } as MenuItem)
-        );
-        items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        setMenuItems(items);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+        const itemsSnap = await getDocs(query(collection(db, "restaurants", slug, "menuItems")));
+        setMenuItems(itemsSnap.docs.map(d => ({ id: d.id, ...d.data() } as MenuItem)));
+      } finally { setLoading(false); }
+    }; fetchData();
   }, [slug]);
 
-  const categories = [
-    "Barchasi",
-    ...Array.from(new Set(menuItems.map((item) => item.category))),
-  ];
-  const filteredItems =
-    activeCategory === "Barchasi"
-      ? menuItems
-      : menuItems.filter((item) => item.category === activeCategory);
+  const filteredItems = useMemo(() => {
+    if (activeCategoryId === "all") return menuItems;
+    const catName = categories.find(c => c.id === activeCategoryId)?.name;
+    return menuItems.filter(i => i.category === catName);
+  }, [menuItems, activeCategoryId, categories]);
 
-  if (loading) return <MenuSkeleton isDark={isDark} />;
-
-  if (!restaurant) {
-    return (
-      <div className="min-h-screen bg-[#050505] text-[#D4AF37] flex items-center justify-center text-xl tracking-widest font-bold">
-        Topilmadi
+  if (loading) return (
+    <div className={cn("min-h-screen flex items-center justify-center", isDark ? "bg-[#050505]" : "bg-[#FAFAFA]")}>
+      <div className="relative w-24 h-24 flex items-center justify-center">
+        <div className="absolute inset-0 border-t-2 border-[#D4AF37] rounded-full animate-spin"></div>
+        <ChefHat className="text-[#D4AF37] w-10 h-10 animate-pulse" />
       </div>
-    );
-  }
+    </div>
+  );
+
+  const activeCategoryObject = categories.find(c => c.id === activeCategoryId);
+  const isDrinksActive = activeCategoryObject ? isDrinkCategory(activeCategoryObject.name) : false;
+
+  const groupedDrinks = isDrinksActive ? filteredItems.reduce((acc, item) => {
+    const sub = item.subCategory || "Boshqalar";
+    if (!acc[sub]) acc[sub] = [];
+    acc[sub].push(item);
+    return acc;
+  }, {} as Record<string, MenuItem[]>) : {};
 
   return (
-    <div
-      className={cn(
-        "min-h-screen pb-20 font-sans transition-colors duration-300 overflow-x-hidden",
-        isDark ? "bg-[#050505] text-white" : "bg-[#FAFAFA] text-[#111]"
-      )}
-    >
-      {/* HEADER */}
-      <div
-        className={cn(
-          "w-full pt-8 pb-4 flex flex-col items-center justify-center relative transition-colors",
-          isDark
-            ? "bg-[#0A0A0A] border-b border-white/5"
-            : "bg-white border-b border-black/5 shadow-sm"
-        )}
-      >
-        {/* BUG FIX: ref qo'shildi — click-outside uchun */}
-        <div
-          ref={themeMenuRef}
-          className="absolute top-4 right-4 sm:top-6 sm:right-8 lg:right-12 z-50"
-        >
-          <button
-            onClick={() => setThemeMenuOpen((prev) => !prev)}
-            aria-label="Mavzuni o'zgartirish"
-            aria-expanded={themeMenuOpen}
-            className={cn(
-              "flex items-center justify-center h-10 w-10 rounded-full border transition-all duration-300 hover:scale-105 active:scale-95",
-              isDark
-                ? "border-[#D4AF37]/30 text-[#D4AF37] bg-black/50 hover:bg-[#D4AF37]/10"
-                : "border-black/10 text-black bg-white/50 hover:bg-black/5"
-            )}
-          >
-            {mode === "system" ? (
-              <Monitor size={18} />
-            ) : isDark ? (
-              <Moon size={18} />
-            ) : (
-              <Sun size={18} />
-            )}
-          </button>
+    <div className={cn("min-h-screen pb-20 font-sans transition-colors duration-500 overflow-x-hidden", isDark ? "bg-[#050505] text-white" : "bg-[#F5F5F7] text-[#111]")}>
 
+      <header className={cn("relative pt-12 pb-8 flex flex-col items-center justify-center text-center px-4 transition-colors", isDark ? "bg-[#0A0A0A]" : "bg-white shadow-sm")}>
+        <div ref={themeMenuRef} className="absolute top-6 right-6 z-50">
+          <button onClick={() => setThemeMenuOpen(p => !p)} className={cn("h-10 w-10 rounded-full flex items-center justify-center backdrop-blur-md border transition-all hover:scale-105", isDark ? "bg-[#111]/80 border-white/10 text-[#D4AF37]" : "bg-zinc-100 border-black/5 text-[#B38F24]")}>
+            {mode === "system" ? <Monitor size={16} /> : isDark ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
           {themeMenuOpen && (
-            <div
-              className={cn(
-                "absolute right-0 mt-3 w-40 rounded-2xl border p-1.5 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 origin-top-right",
-                isDark
-                  ? "bg-[#111]/95 border-white/10"
-                  : "bg-white/95 border-black/10"
-              )}
-            >
-              <button
-                onClick={() => {
-                  setThemeMode("light");
-                  setThemeMenuOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-bold transition-all",
-                  isDark
-                    ? "text-zinc-400 hover:bg-white/10 hover:text-white"
-                    : "text-zinc-600 hover:bg-black/5 hover:text-black"
-                )}
-              >
-                <Sun size={16} /> Kunduzgi
-              </button>
-              <button
-                onClick={() => {
-                  setThemeMode("dark");
-                  setThemeMenuOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-bold transition-all",
-                  isDark
-                    ? "text-zinc-400 hover:bg-white/10 hover:text-white"
-                    : "text-zinc-600 hover:bg-black/5 hover:text-black"
-                )}
-              >
-                <Moon size={16} /> Tungi
-              </button>
-              <button
-                onClick={() => {
-                  setThemeMode("system");
-                  setThemeMenuOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-bold transition-all",
-                  isDark
-                    ? "text-zinc-400 hover:bg-white/10 hover:text-white"
-                    : "text-zinc-600 hover:bg-black/5 hover:text-black"
-                )}
-              >
-                <Monitor size={16} /> Sistema
-              </button>
+            <div className={cn("absolute right-0 mt-3 w-40 rounded-[1.2rem] border p-2 shadow-2xl backdrop-blur-3xl animate-in zoom-in-95", isDark ? "bg-[#111]/90 border-white/10" : "bg-white/90 border-black/10")}>
+              <button onClick={() => { setThemeMode("light"); setThemeMenuOpen(false); }} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all", isDark ? "text-zinc-400 hover:text-white hover:bg-white/5" : "text-zinc-600 hover:text-black hover:bg-black/5")}><Sun size={14} /> Kunduzgi</button>
+              <button onClick={() => { setThemeMode("dark"); setThemeMenuOpen(false); }} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all", isDark ? "text-zinc-400 hover:text-white hover:bg-white/5" : "text-zinc-600 hover:text-black hover:bg-black/5")}><Moon size={14} /> Tungi</button>
             </div>
           )}
         </div>
 
-        {/* LOGO & TITLE */}
-        <div className="relative h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 mb-3 rounded-full p-[2px] border-2 border-[#D4AF37] transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.2)]">
-          <div
-            className={cn(
-              "w-full h-full rounded-full overflow-hidden flex items-center justify-center relative",
-              isDark ? "bg-[#050505]" : "bg-white"
-            )}
-          >
-            {restaurant.logoUrl ? (
-              // BUG FIX: unoptimized olib tashlandi — remotePatterns configuratsiya qilingan
-              <Image
-                src={restaurant.logoUrl}
-                alt="Logo"
-                fill
-                priority
-                sizes="(max-width: 640px) 80px, (max-width: 1024px) 96px, 112px"
-                className="object-cover"
-              />
-            ) : (
-              <ChefHat className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-[#D4AF37]" />
-            )}
+        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-[2rem] border border-[#D4AF37]/30 p-1 mb-6 shadow-[0_20px_50px_rgba(212,175,55,0.15)]">
+          <div className={cn("w-full h-full rounded-[1.8rem] overflow-hidden flex items-center justify-center relative shadow-inner", isDark ? "bg-[#111]" : "bg-zinc-50")}>
+            {restaurant?.logoUrl ? <Image src={restaurant.logoUrl} alt="Logo" fill priority className="object-cover" /> : <ChefHat className="text-[#D4AF37] w-12 h-12" />}
           </div>
         </div>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.2em] max-w-2xl leading-tight" style={{ fontFamily: "var(--font-playfair)" }}>{restaurant?.name}</h1>
+      </header>
 
-        <h1
-          className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.2em] text-center"
-          style={{ fontFamily: "var(--font-playfair)" }}
-        >
-          {restaurant.name}
-        </h1>
-
-        <div className="flex items-center gap-6 mt-4">
-          <a
-            href="tel:"
-            className="text-[#D4AF37] hover:text-white transition-colors active:scale-90"
-            aria-label="Telefon"
-          >
-            <Phone size={18} />
-          </a>
-          <a
-            href="#"
-            className="text-[#D4AF37] hover:text-white transition-colors active:scale-90"
-            aria-label="Manzil"
-          >
-            <MapPin size={18} />
-          </a>
-          <a
-            href="#"
-            className="text-[#D4AF37] hover:text-white transition-colors active:scale-90"
-            aria-label="Instagram"
-          >
-            <Instagram size={18} />
-          </a>
+      <div className={cn("sticky top-0 z-40 py-4 shadow-sm backdrop-blur-2xl border-b transition-colors", isDark ? "bg-[#050505]/80 border-white/5" : "bg-white/80 border-black/5")}>
+        <div className="max-w-7xl mx-auto px-4 overflow-x-auto no-scrollbar snap-x">
+          <div className="flex gap-2 sm:gap-3 w-max">
+            <button onClick={() => setActiveCategoryId("all")} className={cn("snap-center flex-shrink-0 px-6 sm:px-8 py-3.5 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300", activeCategoryId === "all" ? "bg-[#D4AF37] text-black shadow-[0_5px_15px_rgba(212,175,55,0.3)]" : isDark ? "bg-[#111] text-zinc-400 hover:text-white" : "bg-zinc-100 text-zinc-600 hover:text-black")}>Barchasi</button>
+            {categories.map((cat) => (
+              <button key={cat.id} onClick={() => setActiveCategoryId(cat.id)} className={cn("snap-center flex-shrink-0 px-6 sm:px-8 py-3.5 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center gap-2", activeCategoryId === cat.id ? "bg-[#D4AF37] text-black shadow-[0_5px_15px_rgba(212,175,55,0.3)]" : isDark ? "bg-[#111] text-zinc-400 hover:text-white" : "bg-zinc-100 text-zinc-600 hover:text-black")}>
+                {cat.name.split(' / ')[0]}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* KATEGORIYALAR */}
-      <div
-        className={cn(
-          "sticky top-0 z-40 py-4 shadow-sm backdrop-blur-xl transition-all",
-          isDark
-            ? "bg-[#050505]/95 border-b border-white/5"
-            : "bg-[#FAFAFA]/95 border-b border-black/5"
-        )}
-      >
-        <div className="max-w-7xl mx-auto w-full px-2 lg:px-8">
-          <nav className="flex items-start gap-3 sm:gap-5 overflow-x-auto no-scrollbar px-2 pb-2 mx-auto w-max min-w-full lg:min-w-0 lg:justify-center lg:flex-wrap">
-            {categories.map((cat) => {
-              const isActive = activeCategory === cat;
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 sm:pt-10">
+
+        {isDrinksActive && Object.keys(groupedDrinks).length > 0 ? (
+          <div className="space-y-12">
+            {Object.entries(groupedDrinks).map(([subCatName, items]) => (
+              <div key={subCatName} className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-4xl mx-auto">
+                <div className="flex items-center gap-4 mb-6">
+                  <h2 className="text-2xl sm:text-3xl font-light tracking-tight text-[#D4AF37]" style={{ fontFamily: "var(--font-playfair)" }}>{subCatName}</h2>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#D4AF37]/50 to-transparent"></div>
+                  <Wine className="text-[#D4AF37]/40" size={24} strokeWidth={1} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                  {items.map(item => {
+                    const parentCat = categories.find(c => c.name === item.category);
+                    const isTimeValid = parentCat ? isWithinTimeRange(parentCat.startTime, parentCat.endTime) : true;
+                    const isCurrentlyAvailable = item.isAvailable && isTimeValid;
+
+                    return (
+                      <div key={item.id} onClick={() => setSelectedItem(item)} className={cn("flex flex-col border-b pb-3 transition-opacity cursor-pointer hover:opacity-80", isDark ? "border-white/10" : "border-black/10", !isCurrentlyAvailable && "opacity-40 grayscale")}>
+                        <div className="flex justify-between items-baseline gap-4">
+                          <h3 className="text-[16px] sm:text-[18px] font-bold flex-1" style={{ fontFamily: "var(--font-playfair)" }}>{item.name}</h3>
+                          <div className="flex-1 border-b-2 border-dotted border-zinc-500/30 mx-2 relative top-[-6px] hidden sm:block"></div>
+                          <span className="text-[#D4AF37] font-black text-[16px] sm:text-[18px] whitespace-nowrap">{Number(item.price).toLocaleString()} <span className="text-[10px] uppercase">UZS</span></span>
+                        </div>
+                        {item.description && <p className="text-[11px] sm:text-xs text-zinc-500 mt-1 max-w-[80%] line-clamp-1">{item.description}</p>}
+                        {!isCurrentlyAvailable && <p className="text-[9px] text-red-500 font-bold uppercase mt-1">Hozir yopiq {parentCat && `(${parentCat.startTime} - ${parentCat.endTime})`}</p>}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            {filteredItems.map((item) => {
+              const parentCat = categories.find(c => c.name === item.category);
+              const isTimeValid = parentCat ? isWithinTimeRange(parentCat.startTime, parentCat.endTime) : true;
+              const isCurrentlyAvailable = item.isAvailable && isTimeValid;
+
               return (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className="flex flex-col items-center flex-shrink-0 w-16 sm:w-20 gap-2 outline-none group"
-                >
-                  <div
-                    className={cn(
-                      "w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-[2px] transition-all p-[2px]",
-                      isActive
-                        ? "border-[#D4AF37]"
-                        : isDark
-                          ? "border-zinc-800 hover:border-[#D4AF37]/50"
-                          : "border-zinc-300 hover:border-[#D4AF37]/50"
+                <div key={item.id} onClick={() => setSelectedItem(item)} className={cn("group flex flex-col rounded-[1.2rem] sm:rounded-[2rem] overflow-hidden border shadow-sm transition-all duration-500 cursor-pointer hover:-translate-y-1", isDark ? "bg-[#0A0A0A] border-white/5" : "bg-white border-black/5", !isCurrentlyAvailable && "opacity-60 grayscale-[50%]")}>
+                  <div className="relative bg-zinc-900 overflow-hidden w-full aspect-square">
+                    {item.imageUrl ? <Image src={item.imageUrl} alt={item.name} fill sizes="(max-width: 640px) 50vw, 33vw" className={cn("object-cover transition-transform duration-[2000ms]", isCurrentlyAvailable && "group-hover:scale-110")} /> : <div className="flex h-full w-full items-center justify-center text-[#D4AF37]/30"><ChefHat size={32} /></div>}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 hidden sm:block" />
+
+                    {!isCurrentlyAvailable && (
+                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 backdrop-blur-[2px] p-2 sm:p-4 text-center">
+                        <Clock className="text-[#D4AF37] w-5 h-5 sm:w-6 sm:h-6 mb-2" />
+                        <span className="text-[#D4AF37] text-[9px] sm:text-[11px] font-black uppercase tracking-widest mb-1">Yopiq</span>
+                        {parentCat && !isTimeValid && <span className="text-white text-[8px] sm:text-[10px] font-bold border-t border-white/20 pt-2 mt-1">{parentCat.startTime} - {parentCat.endTime}</span>}
+                      </div>
                     )}
-                  >
-                    <div
-                      className={cn(
-                        "w-full h-full rounded-full flex items-center justify-center transition-colors",
-                        isActive
-                          ? "bg-[#D4AF37] text-black"
-                          : isDark
-                            ? "bg-[#111] text-[#D4AF37]"
-                            : "bg-white text-[#B38F24]"
-                      )}
-                    >
-                      <span className="text-xs sm:text-sm font-bold">
-                        {cat.substring(0, 2).toUpperCase()}
+                  </div>
+
+                  <div className="p-3 sm:p-5 flex-1 flex flex-col justify-between relative z-10 w-full">
+                    <h3 className={cn("font-bold text-[13px] sm:text-[17px] leading-tight mb-2 line-clamp-2", isDark ? "text-white" : "text-[#111]")} style={{ fontFamily: "var(--font-playfair)" }}>{item.name}</h3>
+                    <p className={cn("text-[9px] sm:text-[11px] leading-relaxed line-clamp-2 mb-3 hidden sm:block", isDark ? "text-zinc-400" : "text-zinc-500")}>{item.description}</p>
+                    <div className="mt-auto">
+                      <span className={cn("text-[14px] sm:text-[18px] font-black tracking-tighter", isDark ? "text-[#D4AF37]" : "text-[#B38F24]")}>
+                        {Number(item.price).toLocaleString()} <span className="text-[8px] sm:text-[9px] uppercase tracking-widest opacity-70">UZS</span>
                       </span>
                     </div>
                   </div>
-                  <span
-                    className={cn(
-                      "text-[10px] sm:text-[11px] font-bold text-center leading-tight transition-colors w-full truncate px-1",
-                      isActive
-                        ? isDark
-                          ? "text-white"
-                          : "text-black"
-                        : "text-zinc-500"
-                    )}
-                  >
-                    {cat}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
-
-      {/* KARTALAR GRIDI */}
-      <main className="max-w-7xl mx-auto px-4 pt-6 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6">
-          {filteredItems.map((item, index) => (
-            <button
-              key={item.id}
-              disabled={!item.isAvailable}
-              onClick={() => item.isAvailable && setSelectedItem(item)}
-              className={cn(
-                "group flex flex-col rounded-2xl overflow-hidden text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl active:scale-[0.98]",
-                isDark
-                  ? "bg-[#111] border border-white/5 hover:border-[#D4AF37]/30"
-                  : "bg-white border border-black/5 shadow-md hover:border-[#D4AF37]/30",
-                !item.isAvailable &&
-                "opacity-40 grayscale pointer-events-none hover:translate-y-0"
-              )}
-            >
-              <div className="relative w-full aspect-[4/5] bg-zinc-900 overflow-hidden">
-                {item.imageUrl ? (
-                  // BUG FIX: unoptimized olib tashlandi — birinchi 4 ta karta priority
-                  <Image
-                    src={item.imageUrl}
-                    alt={item.name}
-                    fill
-                    priority={index < 4}
-                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                    className="object-cover transition-transform duration-[1500ms] group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[#D4AF37]/30 bg-[#0A0A0A]">
-                    <ChefHat size={32} />
-                  </div>
-                )}
-
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-500 z-10 pointer-events-none" />
-
-                {!item.isAvailable && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
-                    <span className="bg-[#D4AF37] text-black px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded">
-                      Tugagan
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col flex-1 p-3 sm:p-4 z-20 relative">
-                <h3
-                  className={cn(
-                    "text-[14px] sm:text-[16px] font-bold leading-tight mb-1.5 line-clamp-2",
-                    isDark ? "text-white" : "text-[#111]"
-                  )}
-                  style={{ fontFamily: "var(--font-playfair)" }}
-                >
-                  {item.name}
-                </h3>
-
-                <p
-                  className={cn(
-                    "text-[10px] sm:text-[11px] line-clamp-2 leading-snug mb-3 flex-1",
-                    isDark ? "text-zinc-400" : "text-zinc-500"
-                  )}
-                >
-                  {item.description ||
-                    "Taom tarkibi va retsepti haqida ma'lumot."}
-                </p>
-
-                <div
-                  className={cn(
-                    "mt-auto pt-3 border-t",
-                    isDark ? "border-[#D4AF37]/15" : "border-[#D4AF37]/15"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "text-[15px] sm:text-[18px] font-black tracking-tighter",
-                      isDark ? "text-[#D4AF37]" : "text-[#B38F24]"
-                    )}
-                  >
-                    {Number(item.price).toLocaleString()}{" "}
-                    <span className="text-[9px] sm:text-[10px] uppercase tracking-widest opacity-80">
-                      UZS
-                    </span>
-                  </span>
                 </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        )}
 
         {filteredItems.length === 0 && !loading && (
-          <div className="py-32 text-center">
-            <Search size={40} className="mx-auto mb-4 text-[#D4AF37]/40" />
-            <p className="text-[12px] font-bold uppercase tracking-[0.3em] text-zinc-500">
-              Hech narsa topilmadi
-            </p>
+          <div className="py-32 flex flex-col items-center justify-center text-center">
+            <Search size={48} className="text-[#D4AF37]/30 mb-6" strokeWidth={1} />
+            <h3 className={cn("text-xl sm:text-2xl font-light mb-2", isDark ? "text-white" : "text-black")}>Bo'lim bo'sh</h3>
+            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] text-zinc-500">Hech qanday taom topilmadi</p>
           </div>
         )}
       </main>
 
-      <ItemDetailModal
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
-        isDark={isDark}
-      />
-
-      <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function MenuSkeleton({ isDark }: { isDark: boolean }) {
-  const pulseBg = isDark ? "bg-[#1a1a1a]" : "bg-zinc-200";
-  const lineBg = isDark ? "bg-[#222]" : "bg-zinc-300";
-  const baseBg = isDark ? "bg-[#111]" : "bg-white";
-
-  return (
-    <div
-      className={cn(
-        "min-h-screen overflow-x-hidden",
-        isDark ? "bg-[#050505]" : "bg-[#FAFAFA]"
-      )}
-    >
-      <div className="pt-8 pb-4 flex flex-col items-center">
-        <Skeleton
-          className={cn(
-            "w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full mb-3",
-            pulseBg
-          )}
-        />
-        <Skeleton className={cn("w-48 h-6 sm:h-8 rounded-md mb-4", pulseBg)} />
-        <div className="flex gap-6">
-          <Skeleton className={cn("w-5 h-5 rounded", pulseBg)} />
-          <Skeleton className={cn("w-5 h-5 rounded", pulseBg)} />
-          <Skeleton className={cn("w-5 h-5 rounded", pulseBg)} />
-        </div>
-      </div>
-
-      <div className="flex lg:justify-center gap-4 px-4 py-4 overflow-hidden max-w-7xl mx-auto w-full">
-        {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-          <div key={i} className="flex flex-col items-center gap-2">
-            <Skeleton
-              className={cn(
-                "w-14 h-14 sm:w-16 sm:h-16 rounded-full",
-                pulseBg
-              )}
-            />
-            <Skeleton className={cn("w-10 h-2 rounded-sm", pulseBg)} />
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6 px-4 pt-6 max-w-7xl mx-auto">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-          <div
-            key={i}
-            className={cn(
-              "rounded-2xl overflow-hidden flex flex-col border",
-              baseBg,
-              isDark ? "border-white/5" : "border-black/5"
-            )}
-          >
-            <Skeleton
-              className={cn("w-full aspect-[4/5] rounded-none", pulseBg)}
-            />
-            <div className="flex flex-col p-3 sm:p-4 flex-1">
-              <Skeleton className={cn("w-full h-4 mb-1.5 rounded", lineBg)} />
-              <Skeleton className={cn("w-2/3 h-4 mb-4 rounded", lineBg)} />
-              <Skeleton className={cn("w-full h-2 mb-2 rounded", lineBg)} />
-              <Skeleton className={cn("w-4/5 h-2 mb-4 rounded", lineBg)} />
-              <div
-                className={cn(
-                  "mt-auto pt-3 border-t",
-                  isDark ? "border-white/10" : "border-black/5"
-                )}
-              >
-                <Skeleton className={cn("w-1/2 h-5 sm:h-6 rounded", lineBg)} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* TAYYOR MODAL CHAQIRILMOQDA */}
+      <ItemDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} isDark={isDark} />
     </div>
   );
 }
