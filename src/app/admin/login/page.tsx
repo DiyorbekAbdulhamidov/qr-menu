@@ -4,16 +4,23 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import { toast, Toaster } from "react-hot-toast";
-import { ScanFace, Mail, LockKeyhole, ArrowRight, ShieldCheck } from "lucide-react";
+import { toast } from "react-hot-toast";
+// BUG FIX: <Toaster> import olib tashlandi — layout.tsx da bitta global Toaster bor
+import {
+  ScanFace,
+  Mail,
+  LockKeyhole,
+  ArrowRight,
+  ShieldCheck,
+} from "lucide-react";
+
+const SUPER_ADMIN_EMAIL = "admin@qr-menu-webleaders.uz";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
-  const SUPER_ADMIN_EMAIL = "admin@qr-menu-webleaders.uz";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +32,15 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, trimmedEmail, password);
 
       toast.success("Tizimga muvaffaqiyatli kirdingiz", {
-        style: { background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', color: '#000', borderRadius: '16px', fontSize: '14px', fontWeight: '500', boxShadow: '0 8px 30px rgba(0,0,0,0.08)' }
+        style: {
+          background: "rgba(255, 255, 255, 0.9)",
+          backdropFilter: "blur(10px)",
+          color: "#000",
+          borderRadius: "16px",
+          fontSize: "14px",
+          fontWeight: "500",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+        },
       });
 
       if (trimmedEmail === SUPER_ADMIN_EMAIL) {
@@ -33,21 +48,39 @@ export default function LoginPage() {
       } else {
         router.push("/admin/dashboard");
       }
+    } catch (error: unknown) {
+      const code =
+        error instanceof Error && "code" in error
+          ? (error as { code?: string }).code
+          : undefined;
 
-    } catch (error: any) {
-      console.error("Login xatosi:", error);
-      const code = error?.code as string | undefined;
+      const errorStyle = {
+        background: "rgba(255, 255, 255, 0.9)",
+        backdropFilter: "blur(10px)",
+        color: "#FF3B30",
+        borderRadius: "16px",
+        fontSize: "14px",
+        fontWeight: "500",
+        boxShadow: "0 8px 30px rgba(255,59,48,0.15)",
+      };
 
-      const errorStyle = { background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', color: '#FF3B30', borderRadius: '16px', fontSize: '14px', fontWeight: '500', boxShadow: '0 8px 30px rgba(255,59,48,0.15)' };
-
-      if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
+      if (
+        code === "auth/invalid-credential" ||
+        code === "auth/wrong-password" ||
+        code === "auth/user-not-found"
+      ) {
         toast.error("Email yoki parol noto'g'ri.", { style: errorStyle });
       } else if (code === "auth/invalid-email") {
         toast.error("Email formati noto'g'ri.", { style: errorStyle });
       } else if (code === "auth/too-many-requests") {
-        toast.error("Ko'p urinishlar. Birozdan so'ng qayta urinib ko'ring.", { style: errorStyle });
+        toast.error(
+          "Ko'p urinishlar. Birozdan so'ng qayta urinib ko'ring.",
+          { style: errorStyle }
+        );
       } else {
-        toast.error("Tizimga kirishda xatolik yuz berdi.", { style: errorStyle });
+        toast.error("Tizimga kirishda xatolik yuz berdi.", {
+          style: errorStyle,
+        });
       }
     } finally {
       setIsLoading(false);
@@ -56,9 +89,9 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-[#F5F5F7] p-6 font-sans overflow-hidden selection:bg-blue-500/30 selection:text-blue-900">
-      <Toaster position="top-center" reverseOrder={false} />
+      {/* BUG FIX: <Toaster> olib tashlandi */}
 
-      {/* AMBIENT BACKGROUND GLOWS (Glass effekti ishlashi uchun) */}
+      {/* AMBIENT BACKGROUND GLOWS */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-blue-400/20 rounded-full blur-[120px] mix-blend-multiply opacity-70 animate-[pulse_8s_ease-in-out_infinite]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-purple-400/20 rounded-full blur-[120px] mix-blend-multiply opacity-70 animate-[pulse_10s_ease-in-out_infinite_reverse]" />
@@ -67,13 +100,15 @@ export default function LoginPage() {
 
       {/* MAIN GLASS CONTAINER */}
       <div className="w-full max-w-[420px] z-10 animate-in fade-in zoom-in-95 duration-700 ease-out">
-
         <div className="bg-white/40 backdrop-blur-[40px] border border-white/60 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] rounded-[2.5rem] p-8 md:p-10">
-
           {/* HEADER */}
           <div className="flex flex-col items-center text-center mb-10">
             <div className="h-20 w-20 bg-white/50 border border-white/80 text-black rounded-[1.8rem] shadow-[0_8px_16px_rgba(0,0,0,0.03)] flex items-center justify-center mb-6">
-              <ScanFace size={36} strokeWidth={1.5} className="text-[#1D1D1F]" />
+              <ScanFace
+                size={36}
+                strokeWidth={1.5}
+                className="text-[#1D1D1F]"
+              />
             </div>
             <h1 className="text-3xl font-semibold tracking-tight text-[#1D1D1F] mb-2">
               Xush kelibsiz
@@ -85,7 +120,6 @@ export default function LoginPage() {
 
           {/* FORM */}
           <form onSubmit={handleLogin} className="space-y-4">
-
             <div className="space-y-4">
               {/* EMAIL INPUT */}
               <div className="relative group">
@@ -97,7 +131,8 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   required
-                  className="block w-full bg-white/50 hover:bg-white/70 focus:bg-white/90 border border-white/60 focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/10 rounded-[1.2rem] py-4 pl-12 pr-4 text-[#1D1D1F] placeholder:text-[#86868B] transition-all duration-300 sm:text-[15px] font-medium shadow-[inset_0_2px_4px_rgba(0,0,0,0.01)]"
+                  autoComplete="email"
+                  className="block w-full bg-white/50 hover:bg-white/70 focus:bg-white/90 border border-white/60 focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/10 rounded-[1.2rem] py-4 pl-12 pr-4 text-[#1D1D1F] placeholder:text-[#86868B] transition-all duration-300 sm:text-[15px] font-medium shadow-[inset_0_2px_4px_rgba(0,0,0,0.01)] outline-none"
                   placeholder="Email manzil"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -114,7 +149,8 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
-                  className="block w-full bg-white/50 hover:bg-white/70 focus:bg-white/90 border border-white/60 focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/10 rounded-[1.2rem] py-4 pl-12 pr-4 text-[#1D1D1F] placeholder:text-[#86868B] transition-all duration-300 sm:text-[15px] font-medium shadow-[inset_0_2px_4px_rgba(0,0,0,0.01)]"
+                  autoComplete="current-password"
+                  className="block w-full bg-white/50 hover:bg-white/70 focus:bg-white/90 border border-white/60 focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/10 rounded-[1.2rem] py-4 pl-12 pr-4 text-[#1D1D1F] placeholder:text-[#86868B] transition-all duration-300 sm:text-[15px] font-medium shadow-[inset_0_2px_4px_rgba(0,0,0,0.01)] outline-none"
                   placeholder="Maxfiy parol"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -130,9 +166,24 @@ export default function LoginPage() {
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Tekshirilmoqda...
                 </span>
@@ -143,7 +194,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
         </div>
 
         {/* BOTTOM SECURITY BADGE */}
@@ -153,7 +203,6 @@ export default function LoginPage() {
             Apple-grade security encryption
           </span>
         </div>
-
       </div>
     </div>
   );

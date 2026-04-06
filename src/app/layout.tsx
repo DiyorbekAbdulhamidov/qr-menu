@@ -25,11 +25,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uz">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Toaster position="top-center" reverseOrder={false} />
-
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/* BUG FIX: Bitta global Toaster — sahifalarda takrorlanmaydi */}
+        <Toaster
+          position="top-center"
+          reverseOrder={false}
+          toastOptions={{
+            duration: 4000,
+            style: {
+              borderRadius: "12px",
+              fontSize: "14px",
+            },
+          }}
+        />
         {children}
       </body>
     </html>
