@@ -7,6 +7,8 @@ export interface MenuItem {
   imageUrl: string;
   isAvailable: boolean;
   createdAt: number;
+  subCategory?: string; // New field
+
 }
 
 export interface Restaurant {
